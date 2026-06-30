@@ -1,13 +1,15 @@
 {
-  "name": "shared",
+  "name": "@manhole-tracker/shared",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shared constants and types for the Manhole Tracker monorepo",
+  "private": true,
+  "type": "module",
   "main": "constants.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "exports": {
+    ".": "./constants.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module"
+  "scripts": {
+    "test": "echo \"(no tests in shared yet)\""
+  },
+  "license": "ISC"
 }

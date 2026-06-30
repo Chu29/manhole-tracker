@@ -34,19 +34,22 @@
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Frontend | React Native via Expo (SDK 54) | Uses **Expo Router** (file-based routing), not React Navigation as a direct dependency — Expo Router manages navigation internally |
-| State Management | Zustand | Lightweight, no boilerplate |
-| Backend | Node.js + Express | REST API |
-| Database | PostgreSQL + PostGIS extension | Geospatial queries via `ST_DWithin` / `ST_Distance`, GiST index on location column |
-| ORM/Query | Raw SQL or Sequelize (with `sequelize-postgis`) for geospatial queries | Prisma's PostGIS support is limited — avoid for geo queries |
-| Auth | JWT | Email/password login |
-| File Storage | S3 / Cloudinary / Firebase Storage | Do NOT store images in Postgres |
-| Local Storage | AsyncStorage | Caching nearby manholes + offline write queue |
-| Maps | react-native-maps | Map view screen |
-| AR (stretch) | ViroReact | Geolocation-anchored AR overlays |
-| Network status | @react-native-community/netinfo | Detect connectivity for offline handling |
+| Repo layout | npm workspaces monorepo | `apps/mobile`, `apps/backend`, `packages/shared`. All packages are ESM (`"type": "module"`). |
+| Language | TypeScript (mobile, `strict`); JS/ESM (backend, shared) | Mobile source files are `.tsx`/`.ts` with kebab-case names (Expo template convention). |
+| Frontend | React Native via Expo (SDK 54) | Uses **Expo Router** (file-based routing). Expo Router manages React Navigation internally — see constraint below. ✅ installed |
+| State Management | Zustand | Lightweight, no boilerplate. ✅ installed |
+| HTTP client | axios | `api/client.ts` instance + interceptors. ✅ installed |
+| Backend | Node.js + Express 5 | REST API. ✅ installed |
+| Database | PostgreSQL + PostGIS extension | Geospatial queries via `ST_DWithin` / `ST_Distance`, GiST index on location column. |
+| DB driver / queries | `pg` with **raw SQL** | ✅ `pg` installed. Sequelize/Prisma intentionally not used — Prisma's PostGIS support is limited; raw SQL keeps the geo query explicit. |
+| Auth | JWT (`jsonwebtoken`) + `bcrypt` | Email/password login. ✅ installed |
+| File upload | `multer` (multipart) → S3 / Cloudinary / Firebase Storage | Do NOT store images in Postgres; persist only `photo_url`. ✅ multer installed; storage provider TBD |
+| Local Storage | AsyncStorage | Caching nearby manholes + offline write queue. ✅ installed |
+| Network status | `@react-native-community/netinfo` | Detect connectivity for offline handling. ✅ installed |
+| Maps | react-native-maps | Map view screen. ⏳ not yet installed |
+| AR (stretch) | ViroReact | Geolocation-anchored AR overlays. ⏳ not yet installed |
 
-**Important constraint:** As of Expo SDK 56+, `expo-router` is incompatible with direct `@react-navigation/*` dependencies — these must NOT be installed as direct deps even on SDK 54, since Expo Router manages React Navigation internally. Navigation is defined via the file structure in `src/app/`.
+**Important constraint:** `expo-router` is intended to be the sole navigation layer — Expo Router manages React Navigation internally, so `@react-navigation/*` should NOT be added as direct dependencies. ⚠️ **Current reality:** the Expo template scaffold already ships `@react-navigation/{native,bottom-tabs,elements}` as direct deps and `app/_layout.tsx` imports `ThemeProvider` from `@react-navigation/native`. Treat removal as a cleanup goal; do not add new `@react-navigation/*` deps. Navigation is defined via the file structure in `apps/mobile/app/`.
 
 ---
 
@@ -142,58 +145,50 @@ ORDER BY distance_meters ASC;
 ## 6. Frontend Architecture
 
 ### 6.1 Project Structure
+
+The repo is an **npm-workspaces monorepo**. Top level:
+
 ```
 manhole-tracker/
-├── app.json
-├── package.json
-├── src/
-│   ├── app/                          # Expo Router file-based routes
-│   │   ├── _layout.js                # root layout, auth gate
-│   │   ├── (auth)/
-│   │   │   ├── _layout.js
-│   │   │   ├── login.js
-│   │   │   └── register.js
-│   │   └── (app)/
-│   │       ├── _layout.js            # bottom tab layout
-│   │       ├── nearby/
-│   │       │   ├── index.js          # proximity-ranked list
-│   │       │   ├── [id].js           # manhole detail (dynamic route)
-│   │       │   └── ar-locator.js     # stretch goal
-│   │       ├── map/
-│   │       │   └── index.js
-│   │       ├── register-manhole/
-│   │       │   └── index.js
-│   │       └── profile/
-│   │           └── index.js
-│   │
-│   ├── api/
-│   │   ├── client.js                 # axios instance + interceptors
-│   │   ├── auth.js
-│   │   └── manholes.js
-│   │
-│   ├── components/
-│   │   ├── ManholeListItem.js        # distance, bearing, color-coded proximity
-│   │   ├── DistanceBadge.js
-│   │   ├── OfflineBanner.js
-│   │   └── PhotoCapture.js
-│   │
-│   ├── store/
-│   │   ├── useAuthStore.js
-│   │   ├── useManholeStore.js        # cachedManholes, sorted list, fetch logic
-│   │   └── useLocationStore.js       # currentLocation, watch subscription
-│   │
-│   ├── services/
-│   │   ├── locationService.js        # watchPositionAsync wrapper, thresholds
-│   │   ├── offlineQueue.js           # write queue + flush-on-reconnect
-│   │   └── geo.js                    # haversineDistance, bearing calc
-│   │
-│   ├── utils/
-│   │   ├── storage.js                # AsyncStorage helpers
-│   │   └── constants.js              # REFETCH_THRESHOLD_METERS=15, DEFAULT_RADIUS=200
-│   │
-│   └── theme/
-│       └── colors.js
+├── package.json                      # workspaces: apps/*, packages/*
+├── manhole-tracker-spec.md
+├── apps/
+│   ├── mobile/                       # Expo SDK 54 app (see tree below)
+│   └── backend/                      # Express + PostGIS REST API
+└── packages/
+    └── shared/                       # @manhole-tracker/shared — cross-package constants/types
+        └── constants.js              # REFETCH_THRESHOLD_METERS, LOCAL_RESORT_INTERVAL_METERS,
+                                      #   DEFAULT_RADIUS_METERS, UTILITY_TYPES  ✅ exists
 ```
+
+**`apps/mobile`** — Expo Router routes live under `app/` (NOT `src/app/`). Files are TypeScript with
+kebab-case names. ✅ = scaffolded today, ⏳ = planned per this spec:
+
+```
+apps/mobile/
+├── app/                              # Expo Router file-based routes
+│   ├── _layout.tsx                   # ✅ root layout (add auth gate ⏳)
+│   ├── (tabs)/                       # ✅ template tabs — to be replaced by app screens below
+│   ├── (auth)/                       # ⏳ login.tsx, register.tsx
+│   ├── nearby/                       # ⏳ index.tsx (proximity list), [id].tsx (detail), ar-locator.tsx
+│   ├── map/                          # ⏳ index.tsx
+│   ├── register-manhole/             # ⏳ index.tsx
+│   └── profile/                      # ⏳ index.tsx
+├── components/                       # ✅ themed-* template comps; ⏳ manhole-list-item, distance-badge,
+│                                     #     offline-banner, photo-capture
+├── hooks/                            # ✅ use-color-scheme, use-theme-color
+├── constants/theme.ts                # ✅ colors/theme (spec's old src/theme/colors.js)
+├── api/                              # ⏳ client.ts (axios + interceptors), auth.ts, manholes.ts
+├── store/                            # ⏳ use-auth-store, use-manhole-store, use-location-store
+├── services/                         # ⏳ location-service, offline-queue, geo (haversine, bearing)
+└── utils/                            # ⏳ storage.ts (AsyncStorage helpers)
+```
+
+> Shared numeric thresholds (`REFETCH_THRESHOLD_METERS`, `DEFAULT_RADIUS_METERS`, …) are **not**
+> redefined in the mobile app — import them from `@manhole-tracker/shared` so client and server agree.
+
+**`apps/backend`** — `src/index.js` (⏳ currently empty; build per §5). Suggested: `routes/`, `db/`
+(pg pool + the §5 geo query), `middleware/` (JWT auth), `controllers/`.
 
 ### 6.2 Location & Proximity-List Logic (core feature)
 
@@ -202,9 +197,9 @@ manhole-tracker/
 2. **Server re-fetch tier** — Only re-call `GET /manholes/nearby` when the technician has moved ≥15 meters from the location of the last successful fetch. This avoids unnecessary network calls while keeping data fresh.
 
 ```js
-const REFETCH_THRESHOLD_METERS = 15;
-const LOCAL_RESORT_INTERVAL_METERS = 5;
-const DEFAULT_RADIUS_METERS = 200;
+// These live in packages/shared/constants.js — import, don't redefine:
+//   import { REFETCH_THRESHOLD_METERS, LOCAL_RESORT_INTERVAL_METERS, DEFAULT_RADIUS_METERS }
+//     from '@manhole-tracker/shared';
 
 function handleLocationUpdate(coords) {
   resortCachedList(coords);  // tier 1: always
@@ -241,7 +236,7 @@ function handleLocationUpdate(coords) {
 
 ## 8. Known Environment Constraints
 - Project pinned to **Expo SDK 54** for Expo Go compatibility (SDK 56 caused `Incompatible SDK version` errors with current Expo Go release).
-- `@react-navigation/*` packages must NOT be installed as direct dependencies — Expo Router (file-based routing in `src/app/`) handles navigation internally.
+- `@react-navigation/*` packages should NOT be added as direct dependencies — Expo Router (file-based routing in `apps/mobile/app/`) handles navigation internally. Note: the current template scaffold still ships these as direct deps (see §3) — treat removal as a cleanup goal, not an invariant that already holds.
 - Development/testing primarily on physical Android device via Expo Go (emulator GPS is simulated and less representative of field conditions).
 
 ---
