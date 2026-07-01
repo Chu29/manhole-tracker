@@ -13,6 +13,8 @@
   "scripts": {
     "mobile": "npm run start --workspace=apps/mobile",
     "backend": "npm run dev --workspace=apps/backend",
+    "backend:dev": "npm run dev --workspace=apps/backend",
+    "backend:migrate": "npm run migrate --workspace=apps/backend",
     "lint": "npm run lint --workspace=apps/mobile"
   },
   "license": "ISC",

@@ -1,25 +1,41 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import { UTILITY_TYPES } from '@manhole-tracker/shared';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import authRoutes from "./routes/auth.routes.js";
+import manholeRoutes from "./routes/manholes.routes.js";
+import uploadRoutes from "./routes/uploads.routes.js";
+import { errorHandler } from "./middleware/error-handler.js";
+
+const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET"];
+const missing = requiredEnvVars.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  console.error(
+    `Missing required environment variables: ${missing.join(", ")}`,
+  );
+  console.error("Copy .env.example to .env and fill in real values.");
+  process.exit(1);
+}
 
 const app = express();
-const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
-// Health check — confirms the server (and shared-package wiring) is up.
-// Routes from spec §5 (/api/auth, /api/manholes, ...) get mounted here as they're built.
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'manhole-tracker-backend', utilityTypes: UTILITY_TYPES });
+app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+app.use("/api/auth", authRoutes);
+app.use("/api/manholes", manholeRoutes);
+app.use("/api/uploads", uploadRoutes);
+
+// 404 for unmatched API routes
+app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
+
+// Must be registered last
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Manhole Tracker backend listening on port http://localhost:${PORT}`);
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`[backend] listening on http://localhost:${PORT}`);
-});
-
-// Graceful shutdown so nodemon restarts / Ctrl-C don't leave the port held.
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => server.close(() => process.exit(0)));
-}
+export default app;
