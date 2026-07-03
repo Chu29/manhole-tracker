@@ -1,0 +1,4 @@
+apps/backend/
+apps/db/
+*.sql
+node_modules/
