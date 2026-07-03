@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import MapView, { Marker, Circle } from "react-native-maps";
 import { router } from "expo-router";
 import { useManholeStore } from "../../store/use-manhole-store";
@@ -33,11 +33,6 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Back */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backText}>← List</Text>
-      </TouchableOpacity>
-
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -45,7 +40,6 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
       >
-        {/* Search radius circle around the technician */}
         {currentLocation && (
           <Circle
             center={{
@@ -57,8 +51,6 @@ export default function MapScreen() {
             fillColor="rgba(26,110,191,0.07)"
           />
         )}
-
-        {/* Manhole markers */}
         {sortedList.map((m) => (
           <Marker
             key={m.id}
@@ -80,7 +72,6 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Centre-on-me FAB */}
       <TouchableOpacity style={styles.fab} onPress={centreOnMe}>
         <Text style={styles.fabText}>📍</Text>
       </TouchableOpacity>
@@ -91,25 +82,9 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  backButton: {
-    position: "absolute",
-    top: 54,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  backText: { color: Colors.primary, fontWeight: "600", fontSize: 14 },
   fab: {
     position: "absolute",
-    bottom: 34,
+    bottom: 24,
     right: 20,
     width: 52,
     height: 52,

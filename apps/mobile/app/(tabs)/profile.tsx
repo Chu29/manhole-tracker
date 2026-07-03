@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { router } from "expo-router";
 import { useAuthStore } from "../../store/use-auth-store";
 import { useLocationStore } from "../../store/use-location-store";
 import { getPendingCount, flushQueue } from "../../services/offline-queue";
@@ -17,7 +16,7 @@ export default function ProfileScreen() {
   }, []);
 
   async function handleLogout() {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+    Alert.alert("Sign out", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign out",
@@ -25,7 +24,6 @@ export default function ProfileScreen() {
         onPress: async () => {
           stopWatching();
           await logout();
-          // Auth gate in root _layout.tsx redirects to login
         },
       },
     ]);
@@ -40,7 +38,7 @@ export default function ProfileScreen() {
       Alert.alert(
         "Sync complete",
         remaining === 0
-          ? "All queued items uploaded successfully."
+          ? "All items uploaded successfully."
           : `${remaining} item(s) still pending — check your connection.`,
       );
     } finally {
@@ -51,32 +49,27 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Profile</Text>
       </View>
 
       <View style={styles.content}>
-        {/* Identity card */}
         <View style={styles.card}>
           <Text style={styles.name}>{technician?.name}</Text>
           <Text style={styles.email}>{technician?.email}</Text>
           <Text style={styles.role}>{technician?.role}</Text>
         </View>
 
-        {/* Offline queue status */}
         {pendingCount > 0 && (
           <View style={styles.queueCard}>
             <Text style={styles.queueText}>
               {pendingCount} item{pendingCount !== 1 ? "s" : ""} waiting to sync
             </Text>
             <TouchableOpacity
-              style={[styles.flushButton, flushing && styles.buttonDisabled]}
+              style={[styles.flushButton, flushing && styles.disabled]}
               onPress={handleFlush}
               disabled={flushing}
             >
-              <Text style={styles.flushButtonText}>
+              <Text style={styles.flushText}>
                 {flushing ? "Syncing…" : "Sync now"}
               </Text>
             </TouchableOpacity>
@@ -94,14 +87,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
-    paddingTop: 54,
+    paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 14,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  backText: { color: Colors.primary, fontSize: 14, marginBottom: 6 },
   title: { fontSize: 20, fontWeight: "700", color: Colors.text },
   content: { padding: 16 },
   card: {
@@ -142,8 +134,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  buttonDisabled: { opacity: 0.6 },
-  flushButtonText: { color: "#fff", fontWeight: "600", fontSize: 13 },
+  disabled: { opacity: 0.6 },
+  flushText: { color: "#fff", fontWeight: "600", fontSize: 13 },
   logoutButton: {
     height: 50,
     borderRadius: 12,
@@ -151,7 +143,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.danger,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
   },
   logoutText: { color: Colors.danger, fontWeight: "600", fontSize: 15 },
 });
