@@ -1,6 +1,6 @@
+import "react-native-get-random-values";
 import { useEffect } from "react";
 import { Stack, router, useSegments } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../store/use-auth-store";
 import { useManholeStore } from "../store/use-manhole-store";
 import { startQueueFlusher } from "../services/offline-queue";
@@ -21,7 +21,7 @@ function useAuthGate() {
     if (!token && !inAuthGroup) {
       router.replace("/(auth)/login");
     } else if (token && inAuthGroup) {
-      router.replace("/nearby");
+      router.replace("/(tabs)/nearby"); // ← was '/nearby'
     }
   }, [token, isHydrated, segments]);
 }
@@ -42,13 +42,14 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
-        <Stack.Screen name="nearby" />
-        <Stack.Screen name="map" />
-        <Stack.Screen name="register-mahole" />
-        <Stack.Screen name="profile" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="nearby/[id]"
+          options={{ animation: "slide_from_right" }}
+        />
       </Stack>
     </>
   );

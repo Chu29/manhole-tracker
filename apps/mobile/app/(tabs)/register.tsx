@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { router } from "expo-router";
 import * as Location from "expo-location";
 import { createManhole } from "../../api/manholes";
 import { useManholeStore } from "../../store/use-manhole-store";
@@ -20,12 +19,12 @@ import { enqueue } from "../../services/offline-queue";
 import NetInfo from "@react-native-community/netinfo";
 import { UTILITY_TYPES } from "@manhole-tracker/shared";
 
-export default function RegisterManholeScreen() {
+export default function RegisterScreen() {
   const { addOrUpdateManhole } = useManholeStore();
   const { currentLocation } = useLocationStore();
 
   const [code, setCode] = useState("");
-  const [utilityType, setUtilityType] = useState<string>("");
+  const [utilityType, setUtilityType] = useState("");
   const [depthMeters, setDepthMeters] = useState("");
   const [capturedLocation, setCapturedLocation] = useState<{
     lat: number;
@@ -40,10 +39,7 @@ export default function RegisterManholeScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Location permission is required to capture GPS.",
-        );
+        Alert.alert("Permission denied", "Location permission is required.");
         return;
       }
       const loc = await Location.getCurrentPositionAsync({
@@ -63,10 +59,9 @@ export default function RegisterManholeScreen() {
   async function handleSubmit() {
     setError(null);
     if (!capturedLocation) {
-      setError("Capture a GPS location before registering.");
+      setError("Capture a GPS location first.");
       return;
     }
-
     const payload = {
       lat: capturedLocation.lat,
       lng: capturedLocation.lng,
@@ -74,26 +69,22 @@ export default function RegisterManholeScreen() {
       utilityType: (utilityType || undefined) as any,
       depthMeters: depthMeters ? Number(depthMeters) : undefined,
     };
-
     setSubmitting(true);
     try {
       const net = await NetInfo.fetch();
       if (net.isConnected) {
         const manhole = await createManhole(payload);
         addOrUpdateManhole(manhole);
-        Alert.alert(
-          "Success",
-          `Manhole registered${code ? ` as ${code}` : ""}.`,
-          [{ text: "OK", onPress: () => router.back() }],
-        );
+        Alert.alert("Registered", `Manhole ${code || ""} saved successfully.`);
       } else {
         await enqueue({ type: "CREATE_MANHOLE", payload });
-        Alert.alert(
-          "Queued offline",
-          "Registration will be synced when connectivity returns.",
-          [{ text: "OK", onPress: () => router.back() }],
-        );
+        Alert.alert("Queued", "Will sync when connectivity returns.");
       }
+      // Reset form
+      setCode("");
+      setUtilityType("");
+      setDepthMeters("");
+      setCapturedLocation(null);
     } catch (err: any) {
       setError(err.response?.data?.error ?? "Registration failed.");
     } finally {
@@ -104,12 +95,9 @@ export default function RegisterManholeScreen() {
   return (
     <View style={styles.container}>
       <OfflineBanner />
-
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Register Manhole</Text>
+        <Text style={styles.subtitle}>Capture location and metadata</Text>
       </View>
 
       <ScrollView
@@ -118,7 +106,6 @@ export default function RegisterManholeScreen() {
       >
         {error && <Text style={styles.errorText}>{error}</Text>}
 
-        {/* GPS capture */}
         <Text style={styles.label}>GPS Location *</Text>
         {capturedLocation ? (
           <View style={styles.locationCard}>
@@ -132,21 +119,18 @@ export default function RegisterManholeScreen() {
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.captureButton, gpsLoading && styles.buttonDisabled]}
+            style={[styles.captureButton, gpsLoading && styles.disabled]}
             onPress={captureGps}
             disabled={gpsLoading}
           >
             {gpsLoading ? (
               <ActivityIndicator color={Colors.primary} />
             ) : (
-              <Text style={styles.captureButtonText}>
-                📍 Capture GPS Location
-              </Text>
+              <Text style={styles.captureText}>📍 Capture GPS Location</Text>
             )}
           </TouchableOpacity>
         )}
 
-        {/* Code */}
         <Text style={styles.label}>Manhole Code</Text>
         <TextInput
           style={styles.input}
@@ -157,7 +141,6 @@ export default function RegisterManholeScreen() {
           autoCapitalize="characters"
         />
 
-        {/* Utility type */}
         <Text style={styles.label}>Utility Type</Text>
         <View style={styles.chipRow}>
           {(UTILITY_TYPES as string[]).map((type) => (
@@ -178,7 +161,6 @@ export default function RegisterManholeScreen() {
           ))}
         </View>
 
-        {/* Depth */}
         <Text style={styles.label}>Depth (meters)</Text>
         <TextInput
           style={styles.input}
@@ -189,16 +171,15 @@ export default function RegisterManholeScreen() {
           keyboardType="numeric"
         />
 
-        {/* Submit */}
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.buttonDisabled]}
+          style={[styles.submitButton, submitting && styles.disabled]}
           onPress={handleSubmit}
           disabled={submitting}
         >
           {submitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>Register Manhole</Text>
+            <Text style={styles.submitText}>Register Manhole</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -209,15 +190,15 @@ export default function RegisterManholeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
-    paddingTop: 54,
+    paddingTop: 56,
     paddingHorizontal: 16,
     paddingBottom: 14,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  backText: { color: Colors.primary, fontSize: 14, marginBottom: 6 },
   title: { fontSize: 20, fontWeight: "700", color: Colors.text },
+  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   content: { padding: 16, paddingBottom: 40 },
   label: {
     fontSize: 13,
@@ -245,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: Colors.primaryLight,
   },
-  captureButtonText: { color: Colors.primary, fontWeight: "600", fontSize: 15 },
+  captureText: { color: Colors.primary, fontWeight: "600", fontSize: 15 },
   locationCard: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -279,8 +260,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 28,
   },
-  buttonDisabled: { opacity: 0.6 },
-  submitButtonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  disabled: { opacity: 0.6 },
+  submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   errorText: {
     color: Colors.danger,
     backgroundColor: Colors.dangerLight,
