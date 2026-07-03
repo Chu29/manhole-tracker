@@ -2,15 +2,18 @@ import { useEffect, useRef } from "react";
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
 import { router } from "expo-router";
 import { useManholeStore } from "../../store/use-manhole-store";
 import { useLocationStore } from "../../store/use-location-store";
-import { useAuthStore } from "../../store/use-auth-store";
 import { ManholeListItem } from "../../components/manhole-list-item";
 import { OfflineBanner } from "../../components/offline-banner";
 import { Colors } from "../../constants/theme";
@@ -21,7 +24,6 @@ export default function NearbyScreen() {
     useManholeStore();
   const { currentLocation, startWatching, permissionGranted } =
     useLocationStore();
-  const { technician } = useAuthStore();
   const hasInitialFetch = useRef(false);
 
   useEffect(() => {
@@ -81,18 +83,25 @@ export default function NearbyScreen() {
       )}
 
       {currentLocation && (
-        <FlatList
+        <Animated.FlatList
           data={sortedList}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ManholeListItem
-              manhole={item}
-              onPress={() => handlePressManhole(item)}
-            />
+          renderItem={({ item }: { item: Manhole }) => (
+            <Animated.View
+              entering={FadeIn}
+              exiting={FadeOut}
+              layout={LinearTransition}
+            >
+              <ManholeListItem
+                manhole={item}
+                onPress={() => handlePressManhole(item)}
+              />
+            </Animated.View>
           )}
           contentContainerStyle={
             sortedList.length === 0 ? styles.emptyList : styles.listContent
           }
+          itemLayoutAnimation={LinearTransition}
           refreshControl={
             <RefreshControl
               refreshing={isFetching}
