@@ -93,3 +93,28 @@ export async function listInspections(
   );
   return data;
 }
+
+// POST /uploads/photo
+export async function uploadPhoto(uri: string): Promise<{ photoUrl: string }> {
+  const formData = new FormData();
+  const filename = uri.split("/").pop() || "photo.jpg";
+  const match = /\.(\w+)$/.exec(filename);
+  const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+  formData.append("photo", {
+    uri,
+    name: filename,
+    type,
+  } as any);
+
+  const { data } = await apiClient.post<{ photoUrl: string }>(
+    "/uploads/photo",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  );
+  return data;
+}
