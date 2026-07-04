@@ -34,3 +34,8 @@ export async function login(payload: {
   const { data } = await apiClient.post<AuthResponse>("/auth/login", payload);
   return data;
 }
+
+export async function getMe(): Promise<Technician> {
+  const { data } = await apiClient.get<Technician>("/auth/me");
+  return data;
+}

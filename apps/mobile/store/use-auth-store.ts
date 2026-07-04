@@ -1,3 +1,4 @@
+import axios from "axios";
 import { create } from "zustand";
 import { Technician } from "../api/auth";
 import { storeJSON, getJSON, removeItem, STORAGE_KEYS } from "../utils/storage";
@@ -9,6 +10,7 @@ interface AuthState {
 
   // Actions
   setAuth: (token: string, technician: Technician) => Promise<void>;
+  setTechnician: (technician: Technician) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
 }
@@ -26,6 +28,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, technician });
   },
 
+  setTechnician: async (technician) => {
+    await storeJSON(STORAGE_KEYS.TECHNICIAN, technician);
+    set({ technician });
+  },
+
   logout: async () => {
     await Promise.all([
       removeItem(STORAGE_KEYS.AUTH_TOKEN),
@@ -41,5 +48,29 @@ export const useAuthStore = create<AuthState>((set) => ({
       getJSON<Technician>(STORAGE_KEYS.TECHNICIAN),
     ]);
     set({ token, technician, isHydrated: true });
+
+    if (token) {
+      // Async background refresh of the technician profile.
+      // IMPORTANT: use a raw axios instance (not the shared apiClient) so that
+      // a transient 401 / network error here does NOT trigger the global logout
+      // interceptor and silently wipe the persisted session from AsyncStorage.
+      (async () => {
+        try {
+          const baseURL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
+          const response = await axios.get<Technician>(`${baseURL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10_000,
+          });
+          const freshTechnician = response.data;
+          await storeJSON(STORAGE_KEYS.TECHNICIAN, freshTechnician);
+          set({ technician: freshTechnician });
+        } catch (err) {
+          // Soft failure: keep the cached technician that was already restored
+          // from AsyncStorage. Do NOT call logout() here — a transient server
+          // error or expired token should not destroy the user's local session.
+          console.warn("Background technician refresh failed — using cached data:", err);
+        }
+      })();
+    }
   },
 }));

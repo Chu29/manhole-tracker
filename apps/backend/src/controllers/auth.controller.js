@@ -91,7 +91,17 @@ export function refresh(req, res) {
   res.json({ token });
 }
 
-// POST /auth/me
-export function me(req, res) {
-  res.json(req.technician);
+// GET /auth/me
+export async function me(req, res) {
+  const { rows } = await query(
+    `SELECT id, name, email, org_id, role, created_at
+     FROM technicians WHERE id = $1`,
+    [req.technician.id],
+  );
+
+  if (!rows[0]) {
+    throw new HttpError(404, "Technician not found");
+  }
+
+  res.json(toPublicTechnician(rows[0]));
 }
