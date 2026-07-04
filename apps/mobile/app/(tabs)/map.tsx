@@ -9,8 +9,12 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
-  SafeAreaView,
 } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,7 +35,9 @@ const SHEET_COLLAPSED = 130;
 const SHEET_EXPANDED = SCREEN_HEIGHT * 0.55;
 const RADIUS_OPTIONS = [100, 250, 500, 1000, 2000, 5000];
 
-function getUtilityIcon(type: string | null): React.ComponentProps<typeof Ionicons>["name"] {
+function getUtilityIcon(
+  type: string | null,
+): React.ComponentProps<typeof Ionicons>["name"] {
   switch (type?.toLowerCase()) {
     case "sewer":
       return "water";
@@ -72,9 +78,19 @@ function formatRelativeDate(iso: string): string {
 }
 
 export default function MapScreen() {
-  const { sortedList, isFetching, fetchError, fetchNearbyManholes, cachedManholes } =
-    useManholeStore();
-  const { currentLocation, startWatching, permissionGranted, requestPermission } = useLocationStore();
+  const {
+    sortedList,
+    isFetching,
+    fetchError,
+    fetchNearbyManholes,
+    cachedManholes,
+  } = useManholeStore();
+  const {
+    currentLocation,
+    startWatching,
+    permissionGranted,
+    requestPermission,
+  } = useLocationStore();
   const mapRef = useRef<MapView>(null);
 
   // UI state
@@ -88,11 +104,98 @@ export default function MapScreen() {
 
   // Animated sheet height
   const sheetHeight = useRef(new RNAnimated.Value(SHEET_COLLAPSED)).current;
+  const insets = useSafeAreaInsets();
 
   // Start location watching on mount
   useEffect(() => {
     startWatching();
   }, [startWatching]);
+
+  // Filtered manholes based on utility type and status
+  const filteredList = useMemo(() => {
+    let list = sortedList;
+    if (selectedUtility) {
+      list = list.filter((m) => m.utilityType === selectedUtility);
+    }
+    if (selectedStatus) {
+      list = list.filter((m) => m.status === selectedStatus);
+    }
+    return list;
+  }, [sortedList, selectedUtility, selectedStatus]);
+
+  // Stats computed from visible data
+  const stats = useMemo(() => {
+    const byUtility: Record<string, number> = {};
+    const byStatus: Record<string, number> = {};
+    for (const m of sortedList) {
+      if (m.utilityType)
+        byUtility[m.utilityType] = (byUtility[m.utilityType] || 0) + 1;
+      byStatus[m.status] = (byStatus[m.status] || 0) + 1;
+    }
+    return { byUtility, byStatus, total: sortedList.length };
+  }, [sortedList]);
+
+  const toggleSheet = useCallback(() => {
+    const toExpanded = !sheetExpanded;
+    setSheetExpanded(toExpanded);
+    RNAnimated.spring(sheetHeight, {
+      toValue: toExpanded ? SHEET_EXPANDED : SHEET_COLLAPSED,
+      useNativeDriver: false,
+      friction: 10,
+      tension: 40,
+    }).start();
+  }, [sheetExpanded, sheetHeight]);
+
+  const onGestureEvent = RNAnimated.event(
+    [{ nativeEvent: { translationY: sheetHeight } }],
+    { useNativeDriver: false },
+  );
+
+  const onHandlerStateChange = useCallback(
+    ({ nativeEvent }: any) => {
+      if (nativeEvent.state === State.END) {
+        const { translationY } = nativeEvent;
+        const isDraggingDown = translationY > 0;
+        const threshold = 50;
+
+        if (isDraggingDown && translationY > threshold) {
+          setSheetExpanded(false);
+          RNAnimated.spring(sheetHeight, {
+            toValue: SHEET_COLLAPSED,
+            useNativeDriver: false,
+            friction: 10,
+            tension: 40,
+          }).start();
+        } else if (!isDraggingDown && Math.abs(translationY) > threshold) {
+          setSheetExpanded(true);
+          RNAnimated.spring(sheetHeight, {
+            toValue: SHEET_EXPANDED,
+            useNativeDriver: false,
+            friction: 10,
+            tension: 40,
+          }).start();
+        } else {
+          RNAnimated.spring(sheetHeight, {
+            toValue: sheetExpanded ? SHEET_EXPANDED : SHEET_COLLAPSED,
+            useNativeDriver: false,
+            friction: 10,
+            tension: 40,
+          }).start();
+        }
+      }
+    },
+    [sheetExpanded, sheetHeight],
+  );
+
+  function centreOnMe() {
+    if (!currentLocation || !mapRef.current) return;
+    mapRef.current.animateToRegion({
+      latitude: currentLocation.lat,
+      longitude: currentLocation.lng,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
+    });
+  }
 
   // Handle location permissions / locating state
   if (permissionGranted === false) {
@@ -108,7 +211,8 @@ export default function MapScreen() {
           />
           <Text style={styles.permissionTitle}>Location Access Required</Text>
           <Text style={styles.permissionSubtitle}>
-            To view manholes on the map and find those near you, please grant location permission.
+            To view manholes on the map and find those near you, please grant
+            location permission.
           </Text>
           <TouchableOpacity
             style={styles.permissionButton}
@@ -131,50 +235,6 @@ export default function MapScreen() {
         </View>
       </SafeAreaView>
     );
-  }
-
-  // Filtered manholes based on utility type and status
-  const filteredList = useMemo(() => {
-    let list = sortedList;
-    if (selectedUtility) {
-      list = list.filter((m) => m.utilityType === selectedUtility);
-    }
-    if (selectedStatus) {
-      list = list.filter((m) => m.status === selectedStatus);
-    }
-    return list;
-  }, [sortedList, selectedUtility, selectedStatus]);
-
-  // Stats computed from visible data
-  const stats = useMemo(() => {
-    const byUtility: Record<string, number> = {};
-    const byStatus: Record<string, number> = {};
-    for (const m of sortedList) {
-      if (m.utilityType) byUtility[m.utilityType] = (byUtility[m.utilityType] || 0) + 1;
-      byStatus[m.status] = (byStatus[m.status] || 0) + 1;
-    }
-    return { byUtility, byStatus, total: sortedList.length };
-  }, [sortedList]);
-
-  const toggleSheet = useCallback(() => {
-    const toExpanded = !sheetExpanded;
-    setSheetExpanded(toExpanded);
-    RNAnimated.spring(sheetHeight, {
-      toValue: toExpanded ? SHEET_EXPANDED : SHEET_COLLAPSED,
-      useNativeDriver: false,
-      friction: 10,
-      tension: 40,
-    }).start();
-  }, [sheetExpanded, sheetHeight]);
-
-  function centreOnMe() {
-    if (!currentLocation || !mapRef.current) return;
-    mapRef.current.animateToRegion({
-      latitude: currentLocation.lat,
-      longitude: currentLocation.lng,
-      latitudeDelta: 0.005,
-      longitudeDelta: 0.005,
-    });
   }
 
   function handleRefresh() {
@@ -256,9 +316,7 @@ export default function MapScreen() {
               [
                 m.utilityType?.toUpperCase(),
                 m.status,
-                m.distanceMeters
-                  ? formatDistance(m.distanceMeters)
-                  : null,
+                m.distanceMeters ? formatDistance(m.distanceMeters) : null,
               ]
                 .filter(Boolean)
                 .join(" · ") || undefined
@@ -273,7 +331,12 @@ export default function MapScreen() {
       </MapView>
 
       {/* Top-left stats badge */}
-      <View style={styles.topStatsContainer}>
+      <View
+        style={[
+          styles.topStatsContainer,
+          { top: Platform.OS === "ios" ? insets.top + 16 : 24 },
+        ]}
+      >
         <View style={styles.topStatsBadge}>
           <Ionicons name="layers" size={14} color={Colors.primary} />
           <Text style={styles.topStatsText}>
@@ -299,7 +362,12 @@ export default function MapScreen() {
       </View>
 
       {/* Filter Chips Bar */}
-      <View style={styles.chipBarWrapper}>
+      <View
+        style={[
+          styles.chipBarWrapper,
+          { top: Platform.OS === "ios" ? insets.top + 40 : 56 },
+        ]}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -333,9 +401,7 @@ export default function MapScreen() {
                   styles.chip,
                   isActive && { backgroundColor: color, borderColor: color },
                 ]}
-                onPress={() =>
-                  setSelectedUtility(isActive ? null : type)
-                }
+                onPress={() => setSelectedUtility(isActive ? null : type)}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -384,9 +450,7 @@ export default function MapScreen() {
                   styles.chip,
                   isActive && { backgroundColor: color, borderColor: color },
                 ]}
-                onPress={() =>
-                  setSelectedStatus(isActive ? null : status)
-                }
+                onPress={() => setSelectedStatus(isActive ? null : status)}
                 activeOpacity={0.7}
               >
                 <View
@@ -429,7 +493,12 @@ export default function MapScreen() {
 
       {/* Radius Picker Dropdown */}
       {showRadiusPicker && (
-        <View style={styles.radiusPicker}>
+        <View
+          style={[
+            styles.radiusPicker,
+            { top: Platform.OS === "ios" ? insets.top + 82 : 98 },
+          ]}
+        >
           <Text style={styles.radiusPickerTitle}>Search Radius</Text>
           <View style={styles.radiusGrid}>
             {RADIUS_OPTIONS.map((r) => (
@@ -456,7 +525,17 @@ export default function MapScreen() {
       )}
 
       {/* Right-side FAB column */}
-      <View style={styles.fabColumn}>
+      <View
+        style={[
+          styles.fabColumn,
+          {
+            bottom:
+              Platform.OS === "ios"
+                ? insets.bottom + SHEET_COLLAPSED + 16
+                : SHEET_COLLAPSED + 16,
+          },
+        ]}
+      >
         {/* Map type toggle */}
         <TouchableOpacity
           style={styles.fab}
@@ -497,15 +576,26 @@ export default function MapScreen() {
       </View>
 
       {/* Bottom Sheet */}
-      <RNAnimated.View style={[styles.sheet, { height: sheetHeight }]}>
-        {/* Sheet Handle */}
-        <TouchableOpacity
-          style={styles.sheetHandleArea}
-          onPress={toggleSheet}
-          activeOpacity={0.8}
-        >
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHeader}>
+      <PanGestureHandler
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onHandlerStateChange}
+      >
+        <RNAnimated.View style={[styles.sheet, { height: sheetHeight }]}>
+          {/* Sheet Handle */}
+          <TouchableOpacity
+            style={styles.sheetHandleArea}
+            onPress={toggleSheet}
+            activeOpacity={0.8}
+          >
+            <View style={styles.sheetHandle} />
+          </TouchableOpacity>
+
+          {/* Sheet Header */}
+          <TouchableOpacity
+            style={styles.sheetHeader}
+            onPress={toggleSheet}
+            activeOpacity={0.8}
+          >
             <View style={styles.sheetTitleRow}>
               <Ionicons name="list" size={18} color={Colors.text} />
               <Text style={styles.sheetTitle}>
@@ -513,253 +603,254 @@ export default function MapScreen() {
               </Text>
             </View>
             <View style={styles.sheetCountBadge}>
-              <Text style={styles.sheetCountText}>
-                {filteredList.length}
-              </Text>
+              <Text style={styles.sheetCountText}>{filteredList.length}</Text>
             </View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.sheetContent}
-        >
-          {/* Selected Manhole Detail Card */}
-          {selectedManhole && (
-            <TouchableOpacity
-              style={styles.selectedCard}
-              onPress={() => handleNavigateToDetail(selectedManhole.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.selectedCardHeader}>
-                <View
-                  style={[
-                    styles.utilityIconCircle,
-                    {
-                      backgroundColor: selectedManhole.utilityType
-                        ? UtilityColors[selectedManhole.utilityType] + "18"
-                        : Colors.primaryLight,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={getUtilityIcon(selectedManhole.utilityType)}
-                    size={20}
-                    color={
-                      selectedManhole.utilityType
-                        ? UtilityColors[selectedManhole.utilityType]
-                        : Colors.primary
-                    }
-                  />
-                </View>
-                <View style={styles.selectedCardInfo}>
-                  <Text style={styles.selectedCardCode} numberOfLines={1}>
-                    {selectedManhole.code ?? "Unnamed Manhole"}
-                  </Text>
-                  <View style={styles.selectedCardMeta}>
-                    {selectedManhole.utilityType && (
-                      <Text
-                        style={[
-                          styles.utilityTag,
-                          {
-                            color:
-                              UtilityColors[selectedManhole.utilityType] ??
-                              Colors.primary,
-                          },
-                        ]}
-                      >
-                        {selectedManhole.utilityType.toUpperCase()}
-                      </Text>
-                    )}
-                    <View style={styles.statusRow}>
-                      <View
-                        style={[
-                          styles.statusDotSmall,
-                          {
-                            backgroundColor: getStatusColor(
-                              selectedManhole.status,
-                            ),
-                          },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.statusTextSmall,
-                          { color: getStatusColor(selectedManhole.status) },
-                        ]}
-                      >
-                        {selectedManhole.status}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                {selectedManhole.distanceMeters !== undefined && (
-                  <View
-                    style={[
-                      styles.distanceBadge,
-                      selectedManhole.distanceMeters < 10 &&
-                        styles.distanceBadgeClose,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.distanceBadgeText,
-                        selectedManhole.distanceMeters < 10 &&
-                          styles.distanceBadgeTextClose,
-                      ]}
-                    >
-                      {formatDistance(selectedManhole.distanceMeters)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Detail rows */}
-              <View style={styles.divider} />
-              <View style={styles.detailGrid}>
-                {selectedManhole.depthMeters != null && (
-                  <View style={styles.detailItem}>
-                    <Ionicons
-                      name="resize-outline"
-                      size={14}
-                      color={Colors.textMuted}
-                    />
-                    <Text style={styles.detailLabel}>Depth</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedManhole.depthMeters}m
-                    </Text>
-                  </View>
-                )}
-                {selectedManhole.lastInspectedAt && (
-                  <View style={styles.detailItem}>
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={14}
-                      color={Colors.textMuted}
-                    />
-                    <Text style={styles.detailLabel}>Inspected</Text>
-                    <Text style={styles.detailValue}>
-                      {formatRelativeDate(selectedManhole.lastInspectedAt)}
-                    </Text>
-                  </View>
-                )}
-                {selectedManhole.installDate && (
-                  <View style={styles.detailItem}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={14}
-                      color={Colors.textMuted}
-                    />
-                    <Text style={styles.detailLabel}>Installed</Text>
-                    <Text style={styles.detailValue}>
-                      {selectedManhole.installDate}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.viewDetailRow}>
-                <Text style={styles.viewDetailText}>View Full Details</Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={Colors.primary}
-                />
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {/* Manhole List */}
-          {selectedManhole && filteredList.length > 1 && (
-            <View style={styles.listSectionHeader}>
-              <Ionicons
-                name="locate-outline"
-                size={16}
-                color={Colors.textMuted}
-              />
-              <Text style={styles.listSectionTitle}>Other Nearby</Text>
-            </View>
-          )}
-
-          {filteredList
-            .filter((m) => m.id !== selectedManhole?.id)
-            .map((m) => (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.sheetContent}
+          >
+            {/* Selected Manhole Detail Card */}
+            {selectedManhole && (
               <TouchableOpacity
-                key={m.id}
-                style={styles.listCard}
-                onPress={() => {
-                  setSelectedManhole(m);
-                  mapRef.current?.animateToRegion({
-                    latitude: m.lat,
-                    longitude: m.lng,
-                    latitudeDelta: 0.003,
-                    longitudeDelta: 0.003,
-                  });
-                }}
+                style={styles.selectedCard}
+                onPress={() => handleNavigateToDetail(selectedManhole.id)}
                 activeOpacity={0.7}
               >
-                <View style={styles.listCardBody}>
-                  <View style={styles.listCardTopRow}>
-                    <Text style={styles.listCardCode} numberOfLines={1}>
-                      {m.code ?? "Unnamed"}
-                    </Text>
-                    {m.distanceMeters !== undefined && (
-                      <Text style={styles.listCardDistance}>
-                        {formatDistance(m.distanceMeters)}
-                      </Text>
-                    )}
+                <View style={styles.selectedCardHeader}>
+                  <View
+                    style={[
+                      styles.utilityIconCircle,
+                      {
+                        backgroundColor: selectedManhole.utilityType
+                          ? UtilityColors[selectedManhole.utilityType] + "18"
+                          : Colors.primaryLight,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={getUtilityIcon(selectedManhole.utilityType)}
+                      size={20}
+                      color={
+                        selectedManhole.utilityType
+                          ? UtilityColors[selectedManhole.utilityType]
+                          : Colors.primary
+                      }
+                    />
                   </View>
-                  <View style={styles.listCardMetaRow}>
-                    {m.utilityType && (
-                      <Text
-                        style={[
-                          styles.listCardTag,
-                          { color: UtilityColors[m.utilityType] ?? Colors.primary },
-                        ]}
-                      >
-                        {m.utilityType.toUpperCase()}
-                      </Text>
-                    )}
+                  <View style={styles.selectedCardInfo}>
+                    <Text style={styles.selectedCardCode} numberOfLines={1}>
+                      {selectedManhole.code ?? "Unnamed Manhole"}
+                    </Text>
+                    <View style={styles.selectedCardMeta}>
+                      {selectedManhole.utilityType && (
+                        <Text
+                          style={[
+                            styles.utilityTag,
+                            {
+                              color:
+                                UtilityColors[selectedManhole.utilityType] ??
+                                Colors.primary,
+                            },
+                          ]}
+                        >
+                          {selectedManhole.utilityType.toUpperCase()}
+                        </Text>
+                      )}
+                      <View style={styles.statusRow}>
+                        <View
+                          style={[
+                            styles.statusDotSmall,
+                            {
+                              backgroundColor: getStatusColor(
+                                selectedManhole.status,
+                              ),
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusTextSmall,
+                            { color: getStatusColor(selectedManhole.status) },
+                          ]}
+                        >
+                          {selectedManhole.status}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  {selectedManhole.distanceMeters !== undefined && (
                     <View
                       style={[
-                        styles.statusDotTiny,
-                        { backgroundColor: getStatusColor(m.status) },
+                        styles.distanceBadge,
+                        selectedManhole.distanceMeters < 10 &&
+                          styles.distanceBadgeClose,
                       ]}
-                    />
-                    <Text style={styles.listCardStatus}>{m.status}</Text>
-                    {m.lastInspectedAt && (
-                      <Text style={styles.listCardInspected}>
-                        · {formatRelativeDate(m.lastInspectedAt)}
+                    >
+                      <Text
+                        style={[
+                          styles.distanceBadgeText,
+                          selectedManhole.distanceMeters < 10 &&
+                            styles.distanceBadgeTextClose,
+                        ]}
+                      >
+                        {formatDistance(selectedManhole.distanceMeters)}
                       </Text>
-                    )}
-                  </View>
+                    </View>
+                  )}
                 </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={Colors.border}
-                  style={{ alignSelf: "center" }}
-                />
-              </TouchableOpacity>
-            ))}
 
-          {filteredList.length === 0 && !isFetching && (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name="search-outline"
-                size={36}
-                color={Colors.textMuted}
-              />
-              <Text style={styles.emptyTitle}>No Manholes Found</Text>
-              <Text style={styles.emptySubtitle}>
-                {selectedUtility || selectedStatus
-                  ? "Try adjusting your filters or increasing the search radius."
-                  : "Try increasing the search radius or moving to a different area."}
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </RNAnimated.View>
+                {/* Detail rows */}
+                <View style={styles.divider} />
+                <View style={styles.detailGrid}>
+                  {selectedManhole.depthMeters != null && (
+                    <View style={styles.detailItem}>
+                      <Ionicons
+                        name="resize-outline"
+                        size={14}
+                        color={Colors.textMuted}
+                      />
+                      <Text style={styles.detailLabel}>Depth</Text>
+                      <Text style={styles.detailValue}>
+                        {selectedManhole.depthMeters}m
+                      </Text>
+                    </View>
+                  )}
+                  {selectedManhole.lastInspectedAt && (
+                    <View style={styles.detailItem}>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={14}
+                        color={Colors.textMuted}
+                      />
+                      <Text style={styles.detailLabel}>Inspected</Text>
+                      <Text style={styles.detailValue}>
+                        {formatRelativeDate(selectedManhole.lastInspectedAt)}
+                      </Text>
+                    </View>
+                  )}
+                  {selectedManhole.installDate && (
+                    <View style={styles.detailItem}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={14}
+                        color={Colors.textMuted}
+                      />
+                      <Text style={styles.detailLabel}>Installed</Text>
+                      <Text style={styles.detailValue}>
+                        {selectedManhole.installDate}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.viewDetailRow}>
+                  <Text style={styles.viewDetailText}>View Full Details</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={Colors.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Manhole List */}
+            {selectedManhole && filteredList.length > 1 && (
+              <View style={styles.listSectionHeader}>
+                <Ionicons
+                  name="locate-outline"
+                  size={16}
+                  color={Colors.textMuted}
+                />
+                <Text style={styles.listSectionTitle}>Other Nearby</Text>
+              </View>
+            )}
+
+            {filteredList
+              .filter((m) => m.id !== selectedManhole?.id)
+              .map((m) => (
+                <TouchableOpacity
+                  key={m.id}
+                  style={styles.listCard}
+                  onPress={() => {
+                    setSelectedManhole(m);
+                    mapRef.current?.animateToRegion({
+                      latitude: m.lat,
+                      longitude: m.lng,
+                      latitudeDelta: 0.003,
+                      longitudeDelta: 0.003,
+                    });
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.listCardBody}>
+                    <View style={styles.listCardTopRow}>
+                      <Text style={styles.listCardCode} numberOfLines={1}>
+                        {m.code ?? "Unnamed"}
+                      </Text>
+                      {m.distanceMeters !== undefined && (
+                        <Text style={styles.listCardDistance}>
+                          {formatDistance(m.distanceMeters)}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.listCardMetaRow}>
+                      {m.utilityType && (
+                        <Text
+                          style={[
+                            styles.listCardTag,
+                            {
+                              color:
+                                UtilityColors[m.utilityType] ?? Colors.primary,
+                            },
+                          ]}
+                        >
+                          {m.utilityType.toUpperCase()}
+                        </Text>
+                      )}
+                      <View
+                        style={[
+                          styles.statusDotTiny,
+                          { backgroundColor: getStatusColor(m.status) },
+                        ]}
+                      />
+                      <Text style={styles.listCardStatus}>{m.status}</Text>
+                      {m.lastInspectedAt && (
+                        <Text style={styles.listCardInspected}>
+                          · {formatRelativeDate(m.lastInspectedAt)}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={Colors.border}
+                    style={{ alignSelf: "center" }}
+                  />
+                </TouchableOpacity>
+              ))}
+
+            {filteredList.length === 0 && !isFetching && (
+              <View style={styles.emptyState}>
+                <Ionicons
+                  name="search-outline"
+                  size={36}
+                  color={Colors.textMuted}
+                />
+                <Text style={styles.emptyTitle}>No Manholes Found</Text>
+                <Text style={styles.emptySubtitle}>
+                  {selectedUtility || selectedStatus
+                    ? "Try adjusting your filters or increasing the search radius."
+                    : "Try increasing the search radius or moving to a different area."}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </RNAnimated.View>
+      </PanGestureHandler>
     </View>
   );
 }
@@ -776,7 +867,6 @@ const styles = StyleSheet.create({
   /* ── Top Stats Badge ── */
   topStatsContainer: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 56 : 16,
     left: 14,
     gap: 6,
   },
@@ -820,7 +910,6 @@ const styles = StyleSheet.create({
   /* ── Filter Chip Bar ── */
   chipBarWrapper: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 98 : 56,
     left: 0,
     right: 0,
   },
@@ -877,7 +966,6 @@ const styles = StyleSheet.create({
   /* ── Radius Picker ── */
   radiusPicker: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 140 : 98,
     left: 14,
     right: 14,
     backgroundColor: Colors.surface,
@@ -929,7 +1017,6 @@ const styles = StyleSheet.create({
   fabColumn: {
     position: "absolute",
     right: 14,
-    top: Platform.OS === "ios" ? 56 : 16,
     gap: 10,
   },
   fab: {
@@ -995,6 +1082,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   sheetTitleRow: {
     flexDirection: "row",
@@ -1011,6 +1100,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sheetCountText: {
     fontSize: 12,
