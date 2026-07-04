@@ -13,7 +13,7 @@ import NetInfo from "@react-native-community/netinfo";
 import "react-native-get-random-values"; // polyfill for crypto.getRandomValues
 import { v4 as uuidv4 } from "uuid";
 import { getJSON, storeJSON, STORAGE_KEYS } from "../utils/storage";
-import { createManhole, createInspection } from "../api/manholes";
+import { createManhole, createInspection, updateManhole, uploadPhoto } from "../api/manholes";
 
 export type QueuedOperation =
   | {
@@ -26,7 +26,30 @@ export type QueuedOperation =
       type: "CREATE_INSPECTION";
       manholeId: string;
       payload: Parameters<typeof createInspection>[1];
+    }
+  | {
+      id: string;
+      type: "UPDATE_MANHOLE";
+      manholeId: string;
+      payload: Parameters<typeof updateManhole>[1];
     };
+
+export type QueuedOperationPayload =
+  | {
+      type: "CREATE_MANHOLE";
+      payload: Parameters<typeof createManhole>[0];
+    }
+  | {
+      type: "CREATE_INSPECTION";
+      manholeId: string;
+      payload: Parameters<typeof createInspection>[1];
+    }
+  | {
+      type: "UPDATE_MANHOLE";
+      manholeId: string;
+      payload: Parameters<typeof updateManhole>[1];
+    };
+
 
 async function readQueue(): Promise<QueuedOperation[]> {
   return (await getJSON<QueuedOperation[]>(STORAGE_KEYS.OFFLINE_QUEUE)) ?? [];
@@ -36,7 +59,7 @@ async function writeQueue(queue: QueuedOperation[]): Promise<void> {
   await storeJSON(STORAGE_KEYS.OFFLINE_QUEUE, queue);
 }
 
-export async function enqueue(op: Omit<QueuedOperation, "id">): Promise<void> {
+export async function enqueue(op: QueuedOperationPayload): Promise<void> {
   const queue = await readQueue();
   queue.push({ ...op, id: uuidv4() } as QueuedOperation);
   await writeQueue(queue);
@@ -64,12 +87,45 @@ export async function flushQueue(
     const op = queue[i];
     try {
       if (op.type === "CREATE_MANHOLE") {
-        await createManhole(op.payload);
+        const payload = { ...op.payload };
+        if (
+          payload.photoUrl &&
+          (payload.photoUrl.startsWith("file://") ||
+            payload.photoUrl.startsWith("content://") ||
+            payload.photoUrl.startsWith("ph://"))
+        ) {
+          const { photoUrl } = await uploadPhoto(payload.photoUrl);
+          payload.photoUrl = photoUrl;
+        }
+        await createManhole(payload);
       } else if (op.type === "CREATE_INSPECTION") {
-        await createInspection(op.manholeId, op.payload);
+        const payload = { ...op.payload };
+        if (
+          payload.photoUrl &&
+          (payload.photoUrl.startsWith("file://") ||
+            payload.photoUrl.startsWith("content://") ||
+            payload.photoUrl.startsWith("ph://"))
+        ) {
+          const { photoUrl } = await uploadPhoto(payload.photoUrl);
+          payload.photoUrl = photoUrl;
+        }
+        await createInspection(op.manholeId, payload);
+      } else if (op.type === "UPDATE_MANHOLE") {
+        const payload = { ...op.payload };
+        if (
+          payload.photoUrl &&
+          (payload.photoUrl.startsWith("file://") ||
+            payload.photoUrl.startsWith("content://") ||
+            payload.photoUrl.startsWith("ph://"))
+        ) {
+          const { photoUrl } = await uploadPhoto(payload.photoUrl);
+          payload.photoUrl = photoUrl;
+        }
+        await updateManhole(op.manholeId, payload);
       }
       onProgress?.(i + 1, total);
-    } catch {
+    } catch (err) {
+      console.error("Failed to sync operation:", op, err);
       // Keep this item and everything after it — retry next flush cycle.
       remaining.push(...queue.slice(i));
       break;
