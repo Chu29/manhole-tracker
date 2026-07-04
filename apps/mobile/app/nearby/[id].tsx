@@ -9,10 +9,10 @@ import {
   ActivityIndicator,
   Image,
   Alert,
-  SafeAreaView,
   Platform,
   Clipboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -81,7 +81,9 @@ export default function ManholeDetailScreen() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
-  const [inspectionPhotoUri, setInspectionPhotoUri] = useState<string | null>(null);
+  const [inspectionPhotoUri, setInspectionPhotoUri] = useState<string | null>(
+    null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +91,9 @@ export default function ManholeDetailScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editCode, setEditCode] = useState("");
-  const [editUtilityType, setEditUtilityType] = useState<"sewer" | "electrical" | "telecom" | "water" | "">("");
+  const [editUtilityType, setEditUtilityType] = useState<
+    "sewer" | "electrical" | "telecom" | "water" | ""
+  >("");
   const [editDepth, setEditDepth] = useState("");
   const [editInstallDate, setEditInstallDate] = useState("");
   const [editStatus, setEditStatus] = useState("");
@@ -149,9 +153,13 @@ export default function ManholeDetailScreen() {
           quality: 0.8,
         });
       } else {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert("Permission Denied", "Media library permission is required.");
+          Alert.alert(
+            "Permission Denied",
+            "Media library permission is required.",
+          );
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -191,10 +199,16 @@ export default function ManholeDetailScreen() {
         const localUpdated = { ...manhole!, photoUrl: uri };
         setManhole(localUpdated);
         addOrUpdateManhole(localUpdated);
-        Alert.alert("Queued Offline", "Cover photo update queued and will sync when connected.");
+        Alert.alert(
+          "Queued Offline",
+          "Cover photo update queued and will sync when connected.",
+        );
       }
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.error ?? "Failed to update cover photo.");
+      Alert.alert(
+        "Error",
+        err.response?.data?.error ?? "Failed to update cover photo.",
+      );
     } finally {
       setLoading(false);
     }
@@ -206,7 +220,10 @@ export default function ManholeDetailScreen() {
       return;
     }
     if (editInstallDate && !/^\d{4}-\d{2}-\d{2}$/.test(editInstallDate)) {
-      Alert.alert("Invalid Input", "Installation date must be in YYYY-MM-DD format.");
+      Alert.alert(
+        "Invalid Input",
+        "Installation date must be in YYYY-MM-DD format.",
+      );
       return;
     }
 
@@ -245,10 +262,16 @@ export default function ManholeDetailScreen() {
         setManhole(localUpdated);
         addOrUpdateManhole(localUpdated);
         setIsEditing(false);
-        Alert.alert("Queued Offline", "Updates saved locally and will sync when connection returns.");
+        Alert.alert(
+          "Queued Offline",
+          "Updates saved locally and will sync when connection returns.",
+        );
       }
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.error ?? "Failed to update manhole.");
+      Alert.alert(
+        "Error",
+        err.response?.data?.error ?? "Failed to update manhole.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -397,7 +420,10 @@ export default function ManholeDetailScreen() {
 
       {/* Header bar */}
       <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.headerBackBtn}
+        >
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitleText} numberOfLines={1}>
@@ -406,20 +432,38 @@ export default function ManholeDetailScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Cover Photo */}
         <View style={styles.photoSection}>
           {manhole.photoUrl ? (
             <View style={styles.photoContainer}>
-              <Image source={{ uri: manhole.photoUrl }} style={styles.photo} resizeMode="cover" />
-              <TouchableOpacity style={styles.updatePhotoBadge} onPress={handleUpdateCoverPhoto}>
+              <Image
+                source={{ uri: manhole.photoUrl }}
+                style={styles.photo}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.updatePhotoBadge}
+                onPress={handleUpdateCoverPhoto}
+              >
                 <Ionicons name="camera" size={18} color="#fff" />
                 <Text style={styles.updatePhotoBadgeText}>Update Cover</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.photoPlaceholder} onPress={handleUpdateCoverPhoto}>
-              <Ionicons name="image-outline" size={32} color={Colors.textMuted} style={{ marginBottom: 6 }} />
+            <TouchableOpacity
+              style={styles.photoPlaceholder}
+              onPress={handleUpdateCoverPhoto}
+            >
+              <Ionicons
+                name="image-outline"
+                size={32}
+                color={Colors.textMuted}
+                style={{ marginBottom: 6 }}
+              />
               <Text style={styles.photoPlaceholderText}>Add Cover Photo</Text>
             </TouchableOpacity>
           )}
@@ -428,22 +472,61 @@ export default function ManholeDetailScreen() {
         {/* Badges Row */}
         <View style={styles.badgeContainer}>
           {manhole.utilityType && (
-            <View style={[styles.badge, { backgroundColor: (UtilityColors[manhole.utilityType] ?? Colors.primary) + "15" }]}>
-              <Ionicons name={getUtilityIcon(manhole.utilityType)} size={14} color={UtilityColors[manhole.utilityType] ?? Colors.primary} />
-              <Text style={[styles.badgeText, { color: UtilityColors[manhole.utilityType] ?? Colors.primary }]}>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor:
+                    (UtilityColors[manhole.utilityType] ?? Colors.primary) +
+                    "15",
+                },
+              ]}
+            >
+              <Ionicons
+                name={getUtilityIcon(manhole.utilityType)}
+                size={14}
+                color={UtilityColors[manhole.utilityType] ?? Colors.primary}
+              />
+              <Text
+                style={[
+                  styles.badgeText,
+                  {
+                    color: UtilityColors[manhole.utilityType] ?? Colors.primary,
+                  },
+                ]}
+              >
                 {manhole.utilityType}
               </Text>
             </View>
           )}
-          <View style={[styles.badge, { backgroundColor: getStatusColor(manhole.status) + "15" }]}>
-            <View style={[styles.badgeDot, { backgroundColor: getStatusColor(manhole.status) }]} />
-            <Text style={[styles.badgeText, { color: getStatusColor(manhole.status) }]}>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: getStatusColor(manhole.status) + "15" },
+            ]}
+          >
+            <View
+              style={[
+                styles.badgeDot,
+                { backgroundColor: getStatusColor(manhole.status) },
+              ]}
+            />
+            <Text
+              style={[
+                styles.badgeText,
+                { color: getStatusColor(manhole.status) },
+              ]}
+            >
               {manhole.status}
             </Text>
           </View>
           {liveDistance !== undefined && (
             <View style={styles.distanceBadge}>
-              <Ionicons name="navigate-circle-outline" size={14} color={Colors.textMuted} />
+              <Ionicons
+                name="navigate-circle-outline"
+                size={14}
+                color={Colors.textMuted}
+              />
               <Text style={styles.distanceBadgeText}>
                 {formatDistance(liveDistance)} away
               </Text>
@@ -453,11 +536,27 @@ export default function ManholeDetailScreen() {
 
         {/* Metadata Card */}
         <View style={styles.sectionCard}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
             <Text style={styles.sectionTitle}>Manhole Details</Text>
-            <TouchableOpacity onPress={() => setIsEditing(!isEditing)} style={styles.editBtn}>
-              <Ionicons name={isEditing ? "close-circle-outline" : "create-outline"} size={16} color={Colors.primary} />
-              <Text style={styles.editBtnText}>{isEditing ? "Cancel" : "Edit"}</Text>
+            <TouchableOpacity
+              onPress={() => setIsEditing(!isEditing)}
+              style={styles.editBtn}
+            >
+              <Ionicons
+                name={isEditing ? "close-circle-outline" : "create-outline"}
+                size={16}
+                color={Colors.primary}
+              />
+              <Text style={styles.editBtnText}>
+                {isEditing ? "Cancel" : "Edit"}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -465,7 +564,12 @@ export default function ManholeDetailScreen() {
             <View>
               {/* Code */}
               <View style={styles.infoRow}>
-                <Ionicons name="barcode-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="barcode-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Manhole Code</Text>
                   <TextInput
@@ -481,8 +585,18 @@ export default function ManholeDetailScreen() {
               <View style={styles.divider} />
 
               {/* Utility Type */}
-              <View style={[styles.infoRow, { alignItems: "flex-start", paddingVertical: 12 }]}>
-                <Ionicons name="construct-outline" size={20} color={Colors.textMuted} style={[styles.rowIcon, { marginTop: 2 }]} />
+              <View
+                style={[
+                  styles.infoRow,
+                  { alignItems: "flex-start", paddingVertical: 12 },
+                ]}
+              >
+                <Ionicons
+                  name="construct-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={[styles.rowIcon, { marginTop: 2 }]}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Utility Type</Text>
                   <View style={styles.chipRow}>
@@ -499,9 +613,16 @@ export default function ManholeDetailScreen() {
                               borderColor: chipColor,
                             },
                           ]}
-                          onPress={() => setEditUtilityType(isActive ? "" : type as any)}
+                          onPress={() =>
+                            setEditUtilityType(isActive ? "" : (type as any))
+                          }
                         >
-                          <Text style={[styles.chipText, isActive && styles.chipTextSelected]}>
+                          <Text
+                            style={[
+                              styles.chipText,
+                              isActive && styles.chipTextSelected,
+                            ]}
+                          >
                             {type}
                           </Text>
                         </TouchableOpacity>
@@ -513,8 +634,18 @@ export default function ManholeDetailScreen() {
               <View style={styles.divider} />
 
               {/* Status */}
-              <View style={[styles.infoRow, { alignItems: "flex-start", paddingVertical: 12 }]}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.textMuted} style={[styles.rowIcon, { marginTop: 2 }]} />
+              <View
+                style={[
+                  styles.infoRow,
+                  { alignItems: "flex-start", paddingVertical: 12 },
+                ]}
+              >
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={[styles.rowIcon, { marginTop: 2 }]}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Status</Text>
                   <View style={styles.chipRow}>
@@ -533,7 +664,12 @@ export default function ManholeDetailScreen() {
                           ]}
                           onPress={() => setEditStatus(status)}
                         >
-                          <Text style={[styles.chipText, isActive && styles.chipTextSelected]}>
+                          <Text
+                            style={[
+                              styles.chipText,
+                              isActive && styles.chipTextSelected,
+                            ]}
+                          >
                             {status.toUpperCase()}
                           </Text>
                         </TouchableOpacity>
@@ -546,7 +682,12 @@ export default function ManholeDetailScreen() {
 
               {/* Depth */}
               <View style={styles.infoRow}>
-                <Ionicons name="swap-vertical-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="swap-vertical-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Depth (meters)</Text>
                   <TextInput
@@ -563,7 +704,12 @@ export default function ManholeDetailScreen() {
 
               {/* Install Date */}
               <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Installation Date</Text>
                   <View style={styles.dateInputContainer}>
@@ -593,7 +739,12 @@ export default function ManholeDetailScreen() {
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <>
-                    <Ionicons name="checkmark-sharp" size={18} color="#fff" style={{ marginRight: 6 }} />
+                    <Ionicons
+                      name="checkmark-sharp"
+                      size={18}
+                      color="#fff"
+                      style={{ marginRight: 6 }}
+                    />
                     <Text style={styles.saveBtnText}>Save Changes</Text>
                   </>
                 )}
@@ -603,7 +754,12 @@ export default function ManholeDetailScreen() {
             <View>
               {/* Code */}
               <View style={styles.infoRow}>
-                <Ionicons name="barcode-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="barcode-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Code</Text>
                   <Text style={styles.infoValue}>{manhole.code ?? "—"}</Text>
@@ -613,22 +769,57 @@ export default function ManholeDetailScreen() {
 
               {/* Utility Type */}
               <View style={styles.infoRow}>
-                <Ionicons name="construct-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="construct-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Utility</Text>
-                  <Text style={[styles.infoValue, { textTransform: "capitalize" }]}>{manhole.utilityType ?? "—"}</Text>
+                  <Text
+                    style={[styles.infoValue, { textTransform: "capitalize" }]}
+                  >
+                    {manhole.utilityType ?? "—"}
+                  </Text>
                 </View>
               </View>
               <View style={styles.divider} />
 
               {/* Status */}
               <View style={styles.infoRow}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Status</Text>
-                  <View style={{ flexDirection: "row", alignItems: "center", marginTop: 2 }}>
-                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(manhole.status) }]} />
-                    <Text style={[styles.infoValue, { textTransform: "uppercase", fontWeight: "600", fontSize: 13, color: getStatusColor(manhole.status) }]}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 2,
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.statusDot,
+                        { backgroundColor: getStatusColor(manhole.status) },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.infoValue,
+                        {
+                          textTransform: "uppercase",
+                          fontWeight: "600",
+                          fontSize: 13,
+                          color: getStatusColor(manhole.status),
+                        },
+                      ]}
+                    >
                       {manhole.status}
                     </Text>
                   </View>
@@ -638,43 +829,78 @@ export default function ManholeDetailScreen() {
 
               {/* Depth */}
               <View style={styles.infoRow}>
-                <Ionicons name="swap-vertical-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="swap-vertical-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Depth</Text>
-                  <Text style={styles.infoValue}>{manhole.depthMeters ? `${manhole.depthMeters} m` : "—"}</Text>
+                  <Text style={styles.infoValue}>
+                    {manhole.depthMeters ? `${manhole.depthMeters} m` : "—"}
+                  </Text>
                 </View>
               </View>
               <View style={styles.divider} />
 
               {/* Install Date */}
               <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="calendar-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Install Date</Text>
-                  <Text style={styles.infoValue}>{manhole.installDate ?? "—"}</Text>
+                  <Text style={styles.infoValue}>
+                    {manhole.installDate ?? "—"}
+                  </Text>
                 </View>
               </View>
               <View style={styles.divider} />
 
               {/* GPS Coordinates */}
               <View style={styles.infoRow}>
-                <Ionicons name="location-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>GPS Coordinates</Text>
-                  <Text style={[styles.infoValue, styles.monospace]}>{manhole.lat.toFixed(6)}, {manhole.lng.toFixed(6)}</Text>
+                  <Text style={[styles.infoValue, styles.monospace]}>
+                    {manhole.lat.toFixed(6)}, {manhole.lng.toFixed(6)}
+                  </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => copyToClipboard(`${manhole.lat.toFixed(6)}, ${manhole.lng.toFixed(6)}`, "GPS Coordinates")}
+                  onPress={() =>
+                    copyToClipboard(
+                      `${manhole.lat.toFixed(6)}, ${manhole.lng.toFixed(6)}`,
+                      "GPS Coordinates",
+                    )
+                  }
                   style={styles.copyBtn}
                 >
-                  <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+                  <Ionicons
+                    name="copy-outline"
+                    size={18}
+                    color={Colors.primary}
+                  />
                 </TouchableOpacity>
               </View>
               <View style={styles.divider} />
 
               {/* Last Inspected */}
               <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+                <Ionicons
+                  name="time-outline"
+                  size={20}
+                  color={Colors.textMuted}
+                  style={styles.rowIcon}
+                />
                 <View style={styles.rowContent}>
                   <Text style={styles.infoLabel}>Last Inspected</Text>
                   <Text style={styles.infoValue}>
@@ -691,7 +917,7 @@ export default function ManholeDetailScreen() {
         {/* Log Inspection Card */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Log New Inspection</Text>
-          
+
           <TextInput
             style={styles.notesInput}
             placeholder="Write inspection notes here..."
@@ -703,11 +929,16 @@ export default function ManholeDetailScreen() {
           />
 
           {/* Photo attachment for inspection */}
-          <Text style={[styles.infoLabel, { marginBottom: 6 }]}>Inspection Photo (Optional)</Text>
-          
+          <Text style={[styles.infoLabel, { marginBottom: 6 }]}>
+            Inspection Photo (Optional)
+          </Text>
+
           {inspectionPhotoUri ? (
             <View style={styles.attachmentContainer}>
-              <Image source={{ uri: inspectionPhotoUri }} style={styles.attachmentPreview} />
+              <Image
+                source={{ uri: inspectionPhotoUri }}
+                style={styles.attachmentPreview}
+              />
               <TouchableOpacity
                 style={styles.removeAttachmentBtn}
                 onPress={() => setInspectionPhotoUri(null)}
@@ -717,19 +948,36 @@ export default function ManholeDetailScreen() {
             </View>
           ) : (
             <View style={styles.attachBtnRow}>
-              <TouchableOpacity style={styles.attachBtn} onPress={handleTakeInspectionPhoto}>
-                <Ionicons name="camera-outline" size={18} color={Colors.primary} />
+              <TouchableOpacity
+                style={styles.attachBtn}
+                onPress={handleTakeInspectionPhoto}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
                 <Text style={styles.attachBtnText}>Camera</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.attachBtn} onPress={handlePickInspectionImage}>
-                <Ionicons name="images-outline" size={18} color={Colors.primary} />
+              <TouchableOpacity
+                style={styles.attachBtn}
+                onPress={handlePickInspectionImage}
+              >
+                <Ionicons
+                  name="images-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
                 <Text style={styles.attachBtnText}>Gallery</Text>
               </TouchableOpacity>
             </View>
           )}
 
           <TouchableOpacity
-            style={[styles.submitButton, (submitting || !notes.trim()) && styles.disabled]}
+            style={[
+              styles.submitButton,
+              (submitting || !notes.trim()) && styles.disabled,
+            ]}
             onPress={handleLogInspection}
             disabled={submitting || !notes.trim()}
           >
@@ -737,7 +985,12 @@ export default function ManholeDetailScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" style={{ marginRight: 6 }} />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="#fff"
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={styles.submitButtonText}>Submit Inspection</Text>
               </>
             )}
@@ -745,10 +998,19 @@ export default function ManholeDetailScreen() {
         </View>
 
         {/* Inspection History */}
-        <Text style={[styles.sectionTitle, { marginLeft: 4, marginBottom: 12 }]}>Inspection History</Text>
+        <Text
+          style={[styles.sectionTitle, { marginLeft: 4, marginBottom: 12 }]}
+        >
+          Inspection History
+        </Text>
         {inspections.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="document-text-outline" size={32} color={Colors.textMuted} style={{ marginBottom: 6 }} />
+            <Ionicons
+              name="document-text-outline"
+              size={32}
+              color={Colors.textMuted}
+              style={{ marginBottom: 6 }}
+            />
             <Text style={styles.emptyText}>No inspections logged yet.</Text>
           </View>
         ) : (
@@ -756,20 +1018,32 @@ export default function ManholeDetailScreen() {
             <View key={log.id} style={styles.historyCard}>
               <View style={styles.historyHeader}>
                 <View style={styles.historyTechInfo}>
-                  <Ionicons name="person-circle-outline" size={24} color={Colors.textMuted} />
+                  <Ionicons
+                    name="person-circle-outline"
+                    size={24}
+                    color={Colors.textMuted}
+                  />
                   <View style={{ marginLeft: 8 }}>
                     <Text style={styles.historyTechLabel}>Technician</Text>
-                    <Text style={[styles.historyTechId, styles.monospace]}>{log.technicianId.substring(0, 8)}...</Text>
+                    <Text style={[styles.historyTechId, styles.monospace]}>
+                      {log.technicianId.substring(0, 8)}...
+                    </Text>
                   </View>
                 </View>
                 <Text style={styles.historyDate}>
-                  {new Date(log.createdAt).toLocaleDateString()} at {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(log.createdAt).toLocaleDateString()} at{" "}
+                  {new Date(log.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </Text>
               </View>
 
               <View style={styles.divider} />
 
-              <Text style={styles.historyNotes}>{log.notes ?? "(No notes provided)"}</Text>
+              <Text style={styles.historyNotes}>
+                {log.notes ?? "(No notes provided)"}
+              </Text>
 
               {log.photoUrl && (
                 <Image
@@ -798,9 +1072,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  errorText: { color: Colors.danger, fontSize: 15, marginBottom: 16, textAlign: "center" },
+  errorText: {
+    color: Colors.danger,
+    fontSize: 15,
+    marginBottom: 16,
+    textAlign: "center",
+  },
   link: { color: Colors.primary, fontSize: 14, fontWeight: "600" },
-  
+
   // Header bar
   headerBar: {
     height: 56,
@@ -823,7 +1102,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
-  
+
   // Photo Section
   photoSection: {
     marginBottom: 16,
@@ -880,7 +1159,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontWeight: "500",
   },
-  
+
   // Badges
   badgeContainer: {
     flexDirection: "row",
@@ -957,7 +1236,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.primary,
   },
-  
+
   // Info Rows
   infoRow: {
     flexDirection: "row",
@@ -1001,7 +1280,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginRight: 6,
   },
-  
+
   // Editing Inputs
   input: {
     height: 40,
@@ -1075,7 +1354,7 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.6,
   },
-  
+
   // Log Inspection Style
   notesInput: {
     backgroundColor: Colors.background,
@@ -1150,7 +1429,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 15,
   },
-  
+
   // History Style
   emptyCard: {
     backgroundColor: Colors.surface,

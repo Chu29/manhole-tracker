@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   Clipboard,
@@ -13,6 +12,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -41,14 +41,18 @@ export default function NearbyScreen() {
     useLocationStore();
 
   const hasInitialFetch = useRef(false);
-  const lastFetchedCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastFetchedCoordsRef = useRef<{ lat: number; lng: number } | null>(
+    null,
+  );
 
   // Filter/Sort and Radius States
   const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUtility, setSelectedUtility] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"distance" | "depth" | "inspected">("distance");
+  const [sortBy, setSortBy] = useState<"distance" | "depth" | "inspected">(
+    "distance",
+  );
 
   // Keep watching location
   useEffect(() => {
@@ -117,7 +121,11 @@ export default function NearbyScreen() {
         : "—";
     const damaged = sortedList.filter((m) => m.status === "damaged").length;
 
-    return { totalNearby: total, closestText: closestDist, damagedCount: damaged };
+    return {
+      totalNearby: total,
+      closestText: closestDist,
+      damagedCount: damaged,
+    };
   }, [sortedList]);
 
   // Apply filters and sorting client-side
@@ -126,7 +134,9 @@ export default function NearbyScreen() {
       .filter((m) => {
         // 1. Search Query
         if (searchQuery.trim() !== "") {
-          const match = m.code?.toLowerCase().includes(searchQuery.toLowerCase());
+          const match = m.code
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase());
           if (!match) return false;
         }
         // 2. Utility Filter
@@ -141,7 +151,9 @@ export default function NearbyScreen() {
       })
       .sort((a, b) => {
         if (sortBy === "distance") {
-          return (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity);
+          return (
+            (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity)
+          );
         }
         if (sortBy === "depth") {
           const aDepth = a.depthMeters ?? 0;
@@ -149,8 +161,12 @@ export default function NearbyScreen() {
           return aDepth - bDepth;
         }
         if (sortBy === "inspected") {
-          const aTime = a.lastInspectedAt ? new Date(a.lastInspectedAt).getTime() : 0;
-          const bTime = b.lastInspectedAt ? new Date(b.lastInspectedAt).getTime() : 0;
+          const aTime = a.lastInspectedAt
+            ? new Date(a.lastInspectedAt).getTime()
+            : 0;
+          const bTime = b.lastInspectedAt
+            ? new Date(b.lastInspectedAt).getTime()
+            : 0;
           return aTime - bTime;
         }
         return 0;
@@ -166,7 +182,8 @@ export default function NearbyScreen() {
           <Text style={styles.emptyIcon}>📍</Text>
           <Text style={styles.emptyTitle}>Location access needed</Text>
           <Text style={styles.emptyText}>
-            Enable location permission in Settings to search and sort manholes by proximity.
+            Enable location permission in Settings to search and sort manholes
+            by proximity.
           </Text>
         </View>
       </SafeAreaView>
@@ -209,7 +226,10 @@ export default function NearbyScreen() {
           autoCorrect={false}
         />
         {searchQuery !== "" && (
-          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearBtn}>
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+            style={styles.clearBtn}
+          >
             <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
@@ -219,7 +239,9 @@ export default function NearbyScreen() {
 
       {/* Radius selector */}
       <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Scan Radius ({radius < 1000 ? `${radius}m` : `${radius / 1000}km`})</Text>
+        <Text style={styles.filterGroupLabel}>
+          Scan Radius ({radius < 1000 ? `${radius}m` : `${radius / 1000}km`})
+        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -255,10 +277,7 @@ export default function NearbyScreen() {
           contentContainerStyle={styles.pillsScroll}
         >
           <TouchableOpacity
-            style={[
-              styles.pill,
-              selectedUtility === null && styles.pillActive,
-            ]}
+            style={[styles.pill, selectedUtility === null && styles.pillActive]}
             onPress={() => setSelectedUtility(null)}
           >
             <Text
@@ -348,10 +367,7 @@ export default function NearbyScreen() {
           contentContainerStyle={styles.pillsScroll}
         >
           <TouchableOpacity
-            style={[
-              styles.pill,
-              sortBy === "distance" && styles.pillActive,
-            ]}
+            style={[styles.pill, sortBy === "distance" && styles.pillActive]}
             onPress={() => setSortBy("distance")}
           >
             <Text
@@ -377,10 +393,7 @@ export default function NearbyScreen() {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.pill,
-              sortBy === "inspected" && styles.pillActive,
-            ]}
+            style={[styles.pill, sortBy === "inspected" && styles.pillActive]}
             onPress={() => setSortBy("inspected")}
           >
             <Text
@@ -428,12 +441,25 @@ export default function NearbyScreen() {
         <View style={styles.manholeCardBody}>
           {/* Row 1: Code and Distance Badge */}
           <View style={styles.manholeRow}>
-            <Text style={[styles.manholeCode, styles.monospace]} numberOfLines={1}>
+            <Text
+              style={[styles.manholeCode, styles.monospace]}
+              numberOfLines={1}
+            >
               {item.code || "UNNAMED"}
             </Text>
             {item.distanceMeters !== undefined && (
-              <View style={[styles.distanceBadge, item.distanceMeters < 15 && styles.distanceBadgeClose]}>
-                <Text style={[styles.distanceBadgeText, item.distanceMeters < 15 && styles.distanceBadgeTextClose]}>
+              <View
+                style={[
+                  styles.distanceBadge,
+                  item.distanceMeters < 15 && styles.distanceBadgeClose,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.distanceBadgeText,
+                    item.distanceMeters < 15 && styles.distanceBadgeTextClose,
+                  ]}
+                >
                   {formatDistance(item.distanceMeters)}
                 </Text>
               </View>
@@ -442,15 +468,29 @@ export default function NearbyScreen() {
 
           {/* Row 2: Status & Utility Badges */}
           <View style={[styles.manholeRow, { marginTop: 6, marginBottom: 8 }]}>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + "15" }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: statusColor + "15" },
+              ]}
+            >
+              <View
+                style={[styles.statusDot, { backgroundColor: statusColor }]}
+              />
               <Text style={[styles.statusBadgeText, { color: statusColor }]}>
                 {item.status.toUpperCase()}
               </Text>
             </View>
             {item.utilityType && (
-              <View style={[styles.utilityBadge, { backgroundColor: utilityColor + "15" }]}>
-                <Text style={[styles.utilityBadgeText, { color: utilityColor }]}>
+              <View
+                style={[
+                  styles.utilityBadge,
+                  { backgroundColor: utilityColor + "15" },
+                ]}
+              >
+                <Text
+                  style={[styles.utilityBadgeText, { color: utilityColor }]}
+                >
                   {item.utilityType.toUpperCase()}
                 </Text>
               </View>
@@ -495,9 +535,17 @@ export default function NearbyScreen() {
 
       {fetchError && (
         <View style={styles.errorBanner}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
             <Ionicons name="alert-circle" size={20} color={Colors.danger} />
-            <Text style={{ color: Colors.danger, fontWeight: "700", marginLeft: 8 }}>
+            <Text
+              style={{ color: Colors.danger, fontWeight: "700", marginLeft: 8 }}
+            >
               Sync Failure
             </Text>
           </View>
@@ -534,7 +582,11 @@ export default function NearbyScreen() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.avatarContainer}>
-                <Ionicons name="location-outline" size={32} color={Colors.primary} />
+                <Ionicons
+                  name="location-outline"
+                  size={32}
+                  color={Colors.primary}
+                />
               </View>
               <Text style={styles.name}>Nearby Tracker</Text>
               <View style={styles.roleBadge}>
@@ -550,7 +602,11 @@ export default function NearbyScreen() {
                 <Text style={styles.statLabel}>In Range</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons name="navigate-outline" size={20} color={Colors.success} />
+                <Ionicons
+                  name="navigate-outline"
+                  size={20}
+                  color={Colors.success}
+                />
                 <Text style={styles.statValue}>{closestText}</Text>
                 <Text style={styles.statLabel}>Closest Dist</Text>
               </View>
@@ -569,7 +625,8 @@ export default function NearbyScreen() {
             {renderSettingsCard()}
 
             <Text style={styles.listTitle}>
-              {processedList.length} {processedList.length === 1 ? "Manhole" : "Manholes"} Found
+              {processedList.length}{" "}
+              {processedList.length === 1 ? "Manhole" : "Manholes"} Found
             </Text>
           </>
         }
@@ -579,7 +636,8 @@ export default function NearbyScreen() {
               <Text style={styles.emptyIcon}>🔍</Text>
               <Text style={styles.emptyTitle}>No matching manholes</Text>
               <Text style={styles.emptyText}>
-                Try relaxing your search query or filters, or expand the scan radius.
+                Try relaxing your search query or filters, or expand the scan
+                radius.
               </Text>
             </View>
           ) : null
