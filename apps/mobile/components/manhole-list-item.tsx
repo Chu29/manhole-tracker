@@ -15,9 +15,6 @@ export function ManholeListItem({ manhole, onPress }: Props) {
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      {/* Colour stripe indicating utility type */}
-      <View style={[styles.stripe, { backgroundColor: utilityColor }]} />
-
       <View style={styles.body}>
         <View style={styles.topRow}>
           <Text style={styles.code} numberOfLines={1}>
