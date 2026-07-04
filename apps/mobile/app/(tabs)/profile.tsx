@@ -7,10 +7,10 @@ import {
   Alert,
   Clipboard,
   ScrollView,
-  SafeAreaView,
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/use-auth-store";
 import { useLocationStore } from "../../store/use-location-store";
@@ -32,7 +32,9 @@ export default function ProfileScreen() {
   if (token && !technician) {
     return (
       <SafeAreaView style={styles.flex}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       </SafeAreaView>
@@ -66,7 +68,10 @@ export default function ProfileScreen() {
           : `${remaining} item(s) still pending — check your connection.`,
       );
     } catch (err) {
-      Alert.alert("Sync failed", "A network error occurred. Please try again later.");
+      Alert.alert(
+        "Sync failed",
+        "A network error occurred. Please try again later.",
+      );
     } finally {
       setFlushing(false);
     }
@@ -100,7 +105,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header Avatar and Name */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
@@ -108,7 +116,9 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{technician?.name || "Field Agent"}</Text>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{technician?.role || "Technician"}</Text>
+            <Text style={styles.roleText}>
+              {technician?.role || "Technician"}
+            </Text>
           </View>
         </View>
 
@@ -135,7 +145,12 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Account Details</Text>
 
           <View style={styles.infoRow}>
-            <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+            <Ionicons
+              name="mail-outline"
+              size={20}
+              color={Colors.textMuted}
+              style={styles.rowIcon}
+            />
             <View style={styles.rowContent}>
               <Text style={styles.infoLabel}>Email Address</Text>
               <Text style={styles.infoValue}>{technician?.email}</Text>
@@ -145,7 +160,12 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Ionicons name="business-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+            <Ionicons
+              name="business-outline"
+              size={20}
+              color={Colors.textMuted}
+              style={styles.rowIcon}
+            />
             <View style={styles.rowContent}>
               <Text style={styles.infoLabel}>Organization ID</Text>
               <Text style={styles.infoValue}>
@@ -157,7 +177,11 @@ export default function ProfileScreen() {
                 onPress={() => copyToClipboard(technician.orgId!, "Org ID")}
                 style={styles.copyBtn}
               >
-                <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+                <Ionicons
+                  name="copy-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -165,7 +189,12 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color={Colors.textMuted}
+              style={styles.rowIcon}
+            />
             <View style={styles.rowContent}>
               <Text style={styles.infoLabel}>Member Since</Text>
               <Text style={styles.infoValue}>{formattedDate}</Text>
@@ -175,17 +204,28 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <Ionicons name="key-outline" size={20} color={Colors.textMuted} style={styles.rowIcon} />
+            <Ionicons
+              name="key-outline"
+              size={20}
+              color={Colors.textMuted}
+              style={styles.rowIcon}
+            />
             <View style={styles.rowContent}>
               <Text style={styles.infoLabel}>Technician ID</Text>
-              <Text style={[styles.infoValue, styles.monospace]}>{technician?.id}</Text>
+              <Text style={[styles.infoValue, styles.monospace]}>
+                {technician?.id}
+              </Text>
             </View>
             {technician?.id && (
               <TouchableOpacity
                 onPress={() => copyToClipboard(technician.id, "Technician ID")}
                 style={styles.copyBtn}
               >
-                <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+                <Ionicons
+                  name="copy-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -199,7 +239,8 @@ export default function ProfileScreen() {
               <Text style={styles.syncTitle}>Unsynced Operations</Text>
             </View>
             <Text style={styles.syncDesc}>
-              You have {pendingCount} offline inspection(s) or registration(s) that need to be sent to the server.
+              You have {pendingCount} offline inspection(s) or registration(s)
+              that need to be sent to the server.
             </Text>
             <TouchableOpacity
               style={[styles.flushButton, flushing && styles.disabled]}
@@ -416,4 +457,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-

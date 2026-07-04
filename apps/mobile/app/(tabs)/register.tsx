@@ -9,9 +9,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  SafeAreaView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,11 +37,13 @@ export default function RegisterScreen() {
   const { currentLocation, startWatching } = useLocationStore();
 
   const [code, setCode] = useState("");
-  const [utilityType, setUtilityType] = useState<"sewer" | "electrical" | "telecom" | "water" | "">("");
+  const [utilityType, setUtilityType] = useState<
+    "sewer" | "electrical" | "telecom" | "water" | ""
+  >("");
   const [depthMeters, setDepthMeters] = useState("");
   const [installDate, setInstallDate] = useState(getTodayString());
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  
+
   const [capturedLocation, setCapturedLocation] = useState<{
     lat: number;
     lng: number;
@@ -91,7 +93,7 @@ export default function RegisterScreen() {
     if (status !== "granted") {
       Alert.alert(
         "Permission Denied",
-        "Permission to access media library is required to upload a photo."
+        "Permission to access media library is required to upload a photo.",
       );
       return;
     }
@@ -118,7 +120,7 @@ export default function RegisterScreen() {
     if (status !== "granted") {
       Alert.alert(
         "Permission Denied",
-        "Permission to access camera is required to take a photo."
+        "Permission to access camera is required to take a photo.",
       );
       return;
     }
@@ -183,7 +185,7 @@ export default function RegisterScreen() {
         addOrUpdateManhole(manhole);
         Alert.alert(
           "Registered",
-          `Manhole ${code ? code : "at (" + payload.lat.toFixed(4) + ", " + payload.lng.toFixed(4) + ")"} registered successfully.`
+          `Manhole ${code ? code : "at (" + payload.lat.toFixed(4) + ", " + payload.lng.toFixed(4) + ")"} registered successfully.`,
         );
       } else {
         await enqueue({
@@ -195,10 +197,10 @@ export default function RegisterScreen() {
         });
         Alert.alert(
           "Queued Offline",
-          "No internet connection. Manhole registration has been queued and will sync automatically when connection returns."
+          "No internet connection. Manhole registration has been queued and will sync automatically when connection returns.",
         );
       }
-      
+
       // Reset form
       setCode("");
       setUtilityType("");
@@ -254,7 +256,8 @@ export default function RegisterScreen() {
               <Text style={styles.infoLabel}>GPS Coordinates</Text>
               {capturedLocation ? (
                 <Text style={[styles.infoValue, styles.monospace]}>
-                  {capturedLocation.lat.toFixed(6)}, {capturedLocation.lng.toFixed(6)}
+                  {capturedLocation.lat.toFixed(6)},{" "}
+                  {capturedLocation.lng.toFixed(6)}
                 </Text>
               ) : (
                 <Text style={[styles.infoValue, styles.errorTextInline]}>
@@ -276,7 +279,9 @@ export default function RegisterScreen() {
               style={[
                 styles.actionButton,
                 gpsLoading && styles.disabled,
-                capturedLocation ? styles.actionButtonSecondary : styles.actionButtonPrimary,
+                capturedLocation
+                  ? styles.actionButtonSecondary
+                  : styles.actionButtonPrimary,
               ]}
               onPress={captureGps}
               disabled={gpsLoading}
@@ -289,7 +294,9 @@ export default function RegisterScreen() {
               ) : (
                 <>
                   <Ionicons
-                    name={capturedLocation ? "refresh-outline" : "locate-outline"}
+                    name={
+                      capturedLocation ? "refresh-outline" : "locate-outline"
+                    }
                     size={18}
                     color={capturedLocation ? Colors.primary : "#fff"}
                     style={{ marginRight: 6 }}
@@ -297,10 +304,14 @@ export default function RegisterScreen() {
                   <Text
                     style={[
                       styles.actionButtonText,
-                      capturedLocation ? styles.actionButtonTextSecondary : styles.actionButtonTextPrimary,
+                      capturedLocation
+                        ? styles.actionButtonTextSecondary
+                        : styles.actionButtonTextPrimary,
                     ]}
                   >
-                    {capturedLocation ? "Re-capture GPS" : "Capture GPS Location"}
+                    {capturedLocation
+                      ? "Re-capture GPS"
+                      : "Capture GPS Location"}
                   </Text>
                 </>
               )}
@@ -359,7 +370,12 @@ export default function RegisterScreen() {
           <View style={styles.divider} />
 
           {/* Utility Type */}
-          <View style={[styles.infoRow, { alignItems: "flex-start", paddingVertical: 12 }]}>
+          <View
+            style={[
+              styles.infoRow,
+              { alignItems: "flex-start", paddingVertical: 12 },
+            ]}
+          >
             <Ionicons
               name="construct-outline"
               size={20}
@@ -382,7 +398,9 @@ export default function RegisterScreen() {
                           borderColor: chipColor,
                         },
                       ]}
-                      onPress={() => setUtilityType(isActive ? "" : (type as any))}
+                      onPress={() =>
+                        setUtilityType(isActive ? "" : (type as any))
+                      }
                     >
                       <Text
                         style={[
@@ -435,7 +453,12 @@ export default function RegisterScreen() {
           <View style={styles.divider} />
 
           {/* Photo Capture */}
-          <View style={[styles.infoRow, { alignItems: "flex-start", paddingVertical: 12 }]}>
+          <View
+            style={[
+              styles.infoRow,
+              { alignItems: "flex-start", paddingVertical: 12 },
+            ]}
+          >
             <Ionicons
               name="camera-outline"
               size={20}
@@ -444,32 +467,60 @@ export default function RegisterScreen() {
             />
             <View style={styles.rowContent}>
               <Text style={styles.infoLabel}>Manhole Photo</Text>
-              
+
               {photoUri ? (
                 <View style={styles.photoContainer}>
-                  <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+                  <Image
+                    source={{ uri: photoUri }}
+                    style={styles.photoPreview}
+                  />
                   <View style={styles.photoActions}>
                     <TouchableOpacity
-                      style={[styles.photoActionBtn, styles.photoActionBtnSecondary]}
+                      style={[
+                        styles.photoActionBtn,
+                        styles.photoActionBtnSecondary,
+                      ]}
                       onPress={handlePickImage}
                     >
-                      <Ionicons name="images-outline" size={16} color={Colors.primary} />
-                      <Text style={styles.photoActionTextSecondary}>Gallery</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.photoActionBtn, styles.photoActionBtnSecondary]}
-                      onPress={handleTakePhoto}
-                    >
-                      <Ionicons name="camera-outline" size={16} color={Colors.primary} />
-                      <Text style={styles.photoActionTextSecondary}>Retake</Text>
+                      <Ionicons
+                        name="images-outline"
+                        size={16}
+                        color={Colors.primary}
+                      />
+                      <Text style={styles.photoActionTextSecondary}>
+                        Gallery
+                      </Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.photoActionBtn, styles.photoActionBtnDanger]}
+                      style={[
+                        styles.photoActionBtn,
+                        styles.photoActionBtnSecondary,
+                      ]}
+                      onPress={handleTakePhoto}
+                    >
+                      <Ionicons
+                        name="camera-outline"
+                        size={16}
+                        color={Colors.primary}
+                      />
+                      <Text style={styles.photoActionTextSecondary}>
+                        Retake
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.photoActionBtn,
+                        styles.photoActionBtnDanger,
+                      ]}
                       onPress={() => setPhotoUri(null)}
                     >
-                      <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                      <Ionicons
+                        name="trash-outline"
+                        size={16}
+                        color={Colors.danger}
+                      />
                       <Text style={styles.photoActionTextDanger}>Remove</Text>
                     </TouchableOpacity>
                   </View>
@@ -485,18 +536,26 @@ export default function RegisterScreen() {
                   <Text style={styles.photoPlaceholderText}>
                     Capture a photo of the manhole to help locate it later.
                   </Text>
-                  
+
                   <View style={styles.photoActions}>
                     <TouchableOpacity
                       style={styles.photoSelectBtn}
                       onPress={handleTakePhoto}
                     >
-                      <Ionicons name="camera" size={16} color="#fff" style={{ marginRight: 6 }} />
+                      <Ionicons
+                        name="camera"
+                        size={16}
+                        color="#fff"
+                        style={{ marginRight: 6 }}
+                      />
                       <Text style={styles.photoSelectBtnText}>Take Photo</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.photoSelectBtn, styles.photoSelectBtnSecondary]}
+                      style={[
+                        styles.photoSelectBtn,
+                        styles.photoSelectBtnSecondary,
+                      ]}
                       onPress={handlePickImage}
                     >
                       <Ionicons
@@ -505,7 +564,9 @@ export default function RegisterScreen() {
                         color={Colors.primary}
                         style={{ marginRight: 6 }}
                       />
-                      <Text style={styles.photoSelectBtnTextSecondary}>Gallery</Text>
+                      <Text style={styles.photoSelectBtnTextSecondary}>
+                        Gallery
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -866,4 +927,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

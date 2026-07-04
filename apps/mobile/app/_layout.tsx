@@ -1,6 +1,7 @@
 import "react-native-get-random-values";
 import { useEffect } from "react";
 import { Stack, router, useSegments } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../store/use-auth-store";
 import { useManholeStore } from "../store/use-manhole-store";
 import { startQueueFlusher } from "../services/offline-queue";
@@ -41,7 +42,7 @@ export default function RootLayout() {
   useAuthGate();
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
@@ -51,6 +52,6 @@ export default function RootLayout() {
           options={{ animation: "slide_from_right" }}
         />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
