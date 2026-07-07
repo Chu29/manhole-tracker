@@ -2,11 +2,12 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "mobile",
+  name: "Manhole Tracker",
   slug: "mobile",
   version: "1.0.0",
   orientation: "portrait",
   scheme: "mobile",
+  icon: "./assets/images/icon.png",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   ios: {
@@ -16,6 +17,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: "com.manholetracker.mobile",
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    adaptiveIcon: {
+      foregroundImage: "./assets/images/icon.png",
+      backgroundColor: "#1a2744",
+    },
   },
   web: {
     output: "static",

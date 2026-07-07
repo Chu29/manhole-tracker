@@ -291,6 +291,7 @@ export default function MapScreen() {
         showsUserLocation
         showsMyLocationButton={false}
         mapType={mapType}
+        provider={PROVIDER_GOOGLE}
       >
         {/* Search radius circle */}
         {currentLocation && (

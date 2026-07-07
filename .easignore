@@ -2,3 +2,7 @@ apps/backend/
 apps/db/
 *.sql
 node_modules/
+**/build/
+**/.cxx/
+**/.gradle/
+**/.kotlin/
