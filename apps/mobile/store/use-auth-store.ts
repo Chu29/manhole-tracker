@@ -15,7 +15,7 @@ interface AuthState {
   hydrate: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   technician: null,
   isHydrated: false,
@@ -62,8 +62,12 @@ export const useAuthStore = create<AuthState>((set) => ({
             timeout: 10_000,
           });
           const freshTechnician = response.data;
-          await storeJSON(STORAGE_KEYS.TECHNICIAN, freshTechnician);
-          set({ technician: freshTechnician });
+          const currentTechnician = get().technician;
+          const mergedTechnician = currentTechnician
+            ? { ...currentTechnician, ...freshTechnician }
+            : freshTechnician;
+          await storeJSON(STORAGE_KEYS.TECHNICIAN, mergedTechnician);
+          set({ technician: mergedTechnician });
         } catch (err) {
           // Soft failure: keep the cached technician that was already restored
           // from AsyncStorage. Do NOT call logout() here — a transient server

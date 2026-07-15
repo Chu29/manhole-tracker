@@ -17,6 +17,9 @@
     "backend:migrate": "npm run migrate --workspace=apps/backend",
     "lint": "npm run lint --workspace=apps/mobile"
   },
+  "overrides": {
+    "react-native-worklets": "0.5.1"
+  },
   "license": "ISC",
   "type": "module"
 }
