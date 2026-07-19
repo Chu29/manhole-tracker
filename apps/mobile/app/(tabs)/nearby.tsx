@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
-  TextInput,
-  Clipboard,
-  Alert,
   ScrollView,
   Platform,
 } from "react-native";
@@ -25,90 +22,45 @@ import { useLocationStore } from "../../store/use-location-store";
 import { OfflineBanner } from "../../components/offline-banner";
 import { Colors, UtilityColors } from "../../constants/theme";
 import { Manhole } from "../../api/manholes";
-import { formatDistance, haversineDistance } from "../../services/geo";
-import {
-  DEFAULT_RADIUS_METERS,
-  UTILITY_TYPES,
-  MANHOLE_STATUSES,
-} from "@manhole-tracker/shared";
+import { formatDistance } from "../../services/geo";
 
 const RADIUS_OPTIONS = [100, 250, 500, 1000, 2000, 5000];
 
 export default function NearbyScreen() {
-  const { sortedList, isFetching, fetchError, fetchNearbyManholes } =
-    useManholeStore();
+  const {
+    sortedList,
+    isFetching,
+    fetchError,
+    fetchNearbyManholes,
+    scanRadius,
+    setScanRadius,
+  } = useManholeStore();
   const { currentLocation, startWatching, permissionGranted } =
     useLocationStore();
 
-  const hasInitialFetch = useRef(false);
-  const lastFetchedCoordsRef = useRef<{ lat: number; lng: number } | null>(
-    null,
-  );
+  // Filter/Sort States (radius is now store-managed via scanRadius)
 
-  // Filter/Sort and Radius States
-  const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUtility, setSelectedUtility] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"distance" | "depth" | "inspected">(
-    "distance",
-  );
-
-  // Keep watching location
+  // Keep watching location (background watcher handles Tier 1/Tier 2 logic)
   useEffect(() => {
     startWatching();
   }, [startWatching]);
 
-  // Initial fetch when location is first available
-  useEffect(() => {
-    if (currentLocation && !hasInitialFetch.current) {
-      hasInitialFetch.current = true;
-      lastFetchedCoordsRef.current = currentLocation;
-      fetchNearbyManholes(currentLocation, radius);
-    }
-  }, [currentLocation, fetchNearbyManholes, radius]);
-
   // Fetch when user changes the search radius manually
   const handleRadiusChange = (newRadius: number) => {
-    setRadius(newRadius);
+    setScanRadius(newRadius);
     if (currentLocation) {
-      lastFetchedCoordsRef.current = currentLocation;
       fetchNearbyManholes(currentLocation, newRadius);
     }
   };
 
-  // Re-fetch when user moves significantly (>= 15 meters)
-  useEffect(() => {
-    if (currentLocation) {
-      const distanceMoved = lastFetchedCoordsRef.current
-        ? haversineDistance(lastFetchedCoordsRef.current, currentLocation)
-        : Infinity;
-
-      if (distanceMoved >= 15) {
-        lastFetchedCoordsRef.current = currentLocation;
-        fetchNearbyManholes(currentLocation, radius);
-      }
-    }
-  }, [currentLocation, radius, fetchNearbyManholes]);
-
   const handleRefresh = () => {
     if (currentLocation) {
-      lastFetchedCoordsRef.current = currentLocation;
-      fetchNearbyManholes(currentLocation, radius);
+      fetchNearbyManholes(currentLocation, scanRadius);
     }
   };
 
   const handlePressManhole = (manhole: Manhole) => {
     router.push(`/nearby/${manhole.id}`);
-  };
-
-  const copyToClipboard = (text: string, label: string) => {
-    try {
-      Clipboard.setString(text);
-      Alert.alert("Copied", `${label} copied to clipboard!`);
-    } catch {
-      Alert.alert("Details", `${label}:\n${text}`);
-    }
   };
 
   // Calculate high-level stats from the raw sortedList within radius
@@ -129,49 +81,7 @@ export default function NearbyScreen() {
   }, [sortedList]);
 
   // Apply filters and sorting client-side
-  const processedList = useMemo(() => {
-    return sortedList
-      .filter((m) => {
-        // 1. Search Query
-        if (searchQuery.trim() !== "") {
-          const match = m.code
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase());
-          if (!match) return false;
-        }
-        // 2. Utility Filter
-        if (selectedUtility && m.utilityType !== selectedUtility) {
-          return false;
-        }
-        // 3. Status Filter
-        if (selectedStatus && m.status !== selectedStatus) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === "distance") {
-          return (
-            (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity)
-          );
-        }
-        if (sortBy === "depth") {
-          const aDepth = a.depthMeters ?? 0;
-          const bDepth = b.depthMeters ?? 0;
-          return aDepth - bDepth;
-        }
-        if (sortBy === "inspected") {
-          const aTime = a.lastInspectedAt
-            ? new Date(a.lastInspectedAt).getTime()
-            : 0;
-          const bTime = b.lastInspectedAt
-            ? new Date(b.lastInspectedAt).getTime()
-            : 0;
-          return aTime - bTime;
-        }
-        return 0;
-      });
-  }, [sortedList, searchQuery, selectedUtility, selectedStatus, sortBy]);
+  const processedList = sortedList;
 
   // Loading/Permission states
   if (permissionGranted === false) {
@@ -206,42 +116,10 @@ export default function NearbyScreen() {
 
   const renderSettingsCard = () => (
     <View style={styles.sectionCard}>
-      <Text style={styles.sectionTitle}>Scan & Filter Settings</Text>
-
-      {/* Search Input */}
-      <View style={styles.searchContainer}>
-        <Ionicons
-          name="search-outline"
-          size={18}
-          color={Colors.textMuted}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by code..."
-          placeholderTextColor={Colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery !== "" && (
-          <TouchableOpacity
-            onPress={() => setSearchQuery("")}
-            style={styles.clearBtn}
-          >
-            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.divider} />
+      <Text style={styles.sectionTitle}>Scan Radius</Text>
 
       {/* Radius selector */}
       <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>
-          Scan Radius ({radius < 1000 ? `${radius}m` : `${radius / 1000}km`})
-        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -250,161 +128,19 @@ export default function NearbyScreen() {
           {RADIUS_OPTIONS.map((opt) => (
             <TouchableOpacity
               key={opt}
-              style={[styles.pill, radius === opt && styles.pillActive]}
+              style={[styles.pill, scanRadius === opt && styles.pillActive]}
               onPress={() => handleRadiusChange(opt)}
             >
               <Text
                 style={[
                   styles.pillText,
-                  radius === opt && styles.pillTextActive,
+                  scanRadius === opt && styles.pillTextActive,
                 ]}
               >
                 {opt < 1000 ? `${opt}m` : `${opt / 1000}km`}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Utility Type selector */}
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Utility Type</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillsScroll}
-        >
-          <TouchableOpacity
-            style={[styles.pill, selectedUtility === null && styles.pillActive]}
-            onPress={() => setSelectedUtility(null)}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                selectedUtility === null && styles.pillTextActive,
-              ]}
-            >
-              All
-            </Text>
-          </TouchableOpacity>
-          {UTILITY_TYPES.map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.pill,
-                selectedUtility === type && styles.pillActive,
-              ]}
-              onPress={() => setSelectedUtility(type)}
-            >
-              <Text
-                style={[
-                  styles.pillText,
-                  selectedUtility === type && styles.pillTextActive,
-                ]}
-              >
-                {type.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Status selector */}
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Status</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillsScroll}
-        >
-          <TouchableOpacity
-            style={[styles.pill, selectedStatus === null && styles.pillActive]}
-            onPress={() => setSelectedStatus(null)}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                selectedStatus === null && styles.pillTextActive,
-              ]}
-            >
-              All
-            </Text>
-          </TouchableOpacity>
-          {MANHOLE_STATUSES.map((status) => (
-            <TouchableOpacity
-              key={status}
-              style={[
-                styles.pill,
-                selectedStatus === status && styles.pillActive,
-              ]}
-              onPress={() => setSelectedStatus(status)}
-            >
-              <Text
-                style={[
-                  styles.pillText,
-                  selectedStatus === status && styles.pillTextActive,
-                ]}
-              >
-                {status.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Sort By selector */}
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterGroupLabel}>Sort By</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillsScroll}
-        >
-          <TouchableOpacity
-            style={[styles.pill, sortBy === "distance" && styles.pillActive]}
-            onPress={() => setSortBy("distance")}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                sortBy === "distance" && styles.pillTextActive,
-              ]}
-            >
-              Distance
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pill, sortBy === "depth" && styles.pillActive]}
-            onPress={() => setSortBy("depth")}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                sortBy === "depth" && styles.pillTextActive,
-              ]}
-            >
-              Depth
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.pill, sortBy === "inspected" && styles.pillActive]}
-            onPress={() => setSortBy("inspected")}
-          >
-            <Text
-              style={[
-                styles.pillText,
-                sortBy === "inspected" && styles.pillTextActive,
-              ]}
-            >
-              Last Inspected
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       </View>
     </View>
@@ -423,14 +159,6 @@ export default function NearbyScreen() {
           : item.status === "buried"
             ? Colors.warning
             : Colors.textMuted;
-
-    const formattedDate = item.lastInspectedAt
-      ? new Date(item.lastInspectedAt).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "Never";
 
     return (
       <TouchableOpacity
@@ -496,34 +224,6 @@ export default function NearbyScreen() {
               </View>
             )}
           </View>
-
-          {/* <View style={styles.divider} /> */}
-
-          {/* Row 3: Metadata section */}
-          {/* <View style={styles.manholeMetaGrid}>
-            <View style={styles.metaItem}>
-              <Ionicons name="resize-outline" size={14} color={Colors.textMuted} />
-              <Text style={styles.metaValue}>
-                {item.depthMeters !== null ? `${item.depthMeters} m` : "N/A"}
-              </Text>
-            </View>
-
-            <View style={styles.metaItem}>
-              <Ionicons name="calendar-outline" size={14} color={Colors.textMuted} />
-              <Text style={styles.metaValue} numberOfLines={1}>
-                Insp: {formattedDate}
-              </Text>
-            </View>
-
-            <View style={styles.metaItem}>
-              <TouchableOpacity
-                onPress={() => copyToClipboard(item.code || "", "Manhole Code")}
-                style={styles.copyPill}
-              >
-                <Text style={styles.copyPillText}>Copy Code</Text>
-              </TouchableOpacity>
-            </View>
-          </View> */}
         </View>
       </TouchableOpacity>
     );
@@ -633,11 +333,10 @@ export default function NearbyScreen() {
         ListEmptyComponent={
           !isFetching ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyTitle}>No matching manholes</Text>
+              <Ionicons name="search-outline" size={36} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>No manholes found</Text>
               <Text style={styles.emptyText}>
-                Try relaxing your search query or filters, or expand the scan
-                radius.
+                Try increasing the search radius or moving to a different area.
               </Text>
             </View>
           ) : null

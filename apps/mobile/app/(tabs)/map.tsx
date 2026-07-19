@@ -24,7 +24,6 @@ import { Colors, UtilityColors } from "../../constants/theme";
 import { OfflineBanner } from "../../components/offline-banner";
 import { formatDistance } from "../../services/geo";
 import {
-  DEFAULT_RADIUS_METERS,
   UTILITY_TYPES,
   MANHOLE_STATUSES,
 } from "@manhole-tracker/shared";
@@ -83,7 +82,8 @@ export default function MapScreen() {
     isFetching,
     fetchError,
     fetchNearbyManholes,
-    cachedManholes,
+    scanRadius,
+    setScanRadius,
   } = useManholeStore();
   const {
     currentLocation,
@@ -97,7 +97,6 @@ export default function MapScreen() {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [selectedUtility, setSelectedUtility] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [radius, setRadius] = useState(DEFAULT_RADIUS_METERS);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const [mapType, setMapType] = useState<"standard" | "satellite">("standard");
   const [selectedManhole, setSelectedManhole] = useState<Manhole | null>(null);
@@ -239,12 +238,12 @@ export default function MapScreen() {
 
   function handleRefresh() {
     if (currentLocation) {
-      fetchNearbyManholes(currentLocation, radius);
+      fetchNearbyManholes(currentLocation, scanRadius);
     }
   }
 
   function handleRadiusChange(newRadius: number) {
-    setRadius(newRadius);
+    setScanRadius(newRadius);
     setShowRadiusPicker(false);
     if (currentLocation) {
       fetchNearbyManholes(currentLocation, newRadius);
@@ -300,7 +299,7 @@ export default function MapScreen() {
               latitude: currentLocation.lat,
               longitude: currentLocation.lng,
             }}
-            radius={radius}
+            radius={scanRadius}
             strokeColor="rgba(26,110,191,0.35)"
             strokeWidth={1.5}
             fillColor="rgba(26,110,191,0.06)"
@@ -382,7 +381,7 @@ export default function MapScreen() {
           >
             <Ionicons name="radio-outline" size={14} color={Colors.primary} />
             <Text style={[styles.chipText, styles.chipAccentText]}>
-              {radius >= 1000 ? `${radius / 1000}km` : `${radius}m`}
+              {scanRadius >= 1000 ? `${scanRadius / 1000}km` : `${scanRadius}m`}
             </Text>
             <Ionicons
               name={showRadiusPicker ? "chevron-up" : "chevron-down"}
@@ -507,14 +506,14 @@ export default function MapScreen() {
                 key={r}
                 style={[
                   styles.radiusOption,
-                  radius === r && styles.radiusOptionActive,
+                  scanRadius === r && styles.radiusOptionActive,
                 ]}
                 onPress={() => handleRadiusChange(r)}
               >
                 <Text
                   style={[
                     styles.radiusOptionText,
-                    radius === r && styles.radiusOptionTextActive,
+                    scanRadius === r && styles.radiusOptionTextActive,
                   ]}
                 >
                   {r >= 1000 ? `${r / 1000} km` : `${r} m`}

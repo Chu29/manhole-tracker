@@ -71,7 +71,9 @@ export const useLocationStore = create<LocationState>((set, get) => ({
         if (distanceMoved >= REFETCH_THRESHOLD_METERS) {
           const netState = await NetInfo.fetch();
           if (netState.isConnected) {
-            await manholeStore.fetchNearbyManholes(coords);
+            // Read the user's selected scan radius from the manhole store
+            const radius = manholeStore.scanRadius;
+            await manholeStore.fetchNearbyManholes(coords, radius);
           }
           // If offline, tier 1 re-sort is still providing best available UX.
         }
