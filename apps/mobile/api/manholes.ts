@@ -40,11 +40,13 @@ export async function fetchNearbyManholes(
   lat: number,
   lng: number,
   radiusMeters?: number,
+  signal?: AbortSignal,
 ): Promise<Manhole[]> {
   const params: Record<string, string | number> = { lat, lng };
   if (radiusMeters !== undefined) params.radius = radiusMeters;
   const { data } = await apiClient.get<Manhole[]>("/manholes/nearby", {
     params,
+    signal,
   });
   return data;
 }
