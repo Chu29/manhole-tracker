@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,213 +7,38 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Image,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Location from "expo-location";
-import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { createManhole, uploadPhoto } from "../../api/manholes";
-import { useManholeStore } from "../../store/use-manhole-store";
-import { useLocationStore } from "../../store/use-location-store";
+import { useRegisterController } from "@/hooks/useRegisterController";
 import { Colors, UtilityColors } from "../../constants/theme";
 import { OfflineBanner } from "../../components/offline-banner";
-import { enqueue } from "../../services/offline-queue";
-import NetInfo from "@react-native-community/netinfo";
 import { UTILITY_TYPES } from "@manhole-tracker/shared";
 
-function getTodayString(): string {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 export default function RegisterScreen() {
-  const { addOrUpdateManhole } = useManholeStore();
-  const { currentLocation, startWatching } = useLocationStore();
-
-  const [code, setCode] = useState("");
-  const [utilityType, setUtilityType] = useState<
-    "sewer" | "electrical" | "telecom" | "water" | ""
-  >("");
-  const [depthMeters, setDepthMeters] = useState("");
-  const [installDate, setInstallDate] = useState(getTodayString());
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-
-  const [capturedLocation, setCapturedLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync capturedLocation with current location from subscription initially
-  useEffect(() => {
-    startWatching();
-  }, [startWatching]);
-
-  useEffect(() => {
-    if (currentLocation && !capturedLocation) {
-      setCapturedLocation(currentLocation);
-    }
-  }, [currentLocation, capturedLocation]);
-
-  async function captureGps() {
-    setGpsLoading(true);
-    setError(null);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission denied", "Location permission is required.");
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setCapturedLocation({
-        lat: loc.coords.latitude,
-        lng: loc.coords.longitude,
-      });
-    } catch {
-      Alert.alert("Error", "Failed to get GPS location. Try again.");
-    } finally {
-      setGpsLoading(false);
-    }
-  }
-
-  async function handlePickImage() {
-    setError(null);
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "Permission to access media library is required to upload a photo.",
-      );
-      return;
-    }
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setPhotoUri(result.assets[0].uri);
-      }
-    } catch {
-      Alert.alert("Error", "Failed to select photo.");
-    }
-  }
-
-  async function handleTakePhoto() {
-    setError(null);
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "Permission to access camera is required to take a photo.",
-      );
-      return;
-    }
-
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setPhotoUri(result.assets[0].uri);
-      }
-    } catch {
-      Alert.alert("Error", "Failed to take photo.");
-    }
-  }
-
-  async function handleSubmit() {
-    setError(null);
-
-    if (!capturedLocation) {
-      setError("Capture a GPS location first.");
-      return;
-    }
-
-    if (depthMeters && isNaN(Number(depthMeters))) {
-      setError("Depth must be a valid number.");
-      return;
-    }
-
-    if (installDate && !/^\d{4}-\d{2}-\d{2}$/.test(installDate)) {
-      setError("Installation date must be in YYYY-MM-DD format.");
-      return;
-    }
-
-    const payload = {
-      lat: capturedLocation.lat,
-      lng: capturedLocation.lng,
-      code: code.trim() || undefined,
-      utilityType: (utilityType || undefined) as any,
-      depthMeters: depthMeters ? Number(depthMeters) : undefined,
-      installDate: installDate.trim() || undefined,
-    };
-
-    setSubmitting(true);
-    try {
-      const net = await NetInfo.fetch();
-      if (net.isConnected) {
-        let uploadedUrl = undefined;
-        if (photoUri) {
-          const { photoUrl } = await uploadPhoto(photoUri);
-          uploadedUrl = photoUrl;
-        }
-
-        const manhole = await createManhole({
-          ...payload,
-          photoUrl: uploadedUrl,
-        });
-        addOrUpdateManhole(manhole);
-        Alert.alert(
-          "Registered",
-          `Manhole ${code ? code : "at (" + payload.lat.toFixed(4) + ", " + payload.lng.toFixed(4) + ")"} registered successfully.`,
-        );
-      } else {
-        await enqueue({
-          type: "CREATE_MANHOLE",
-          payload: {
-            ...payload,
-            photoUrl: photoUri || undefined,
-          },
-        });
-        Alert.alert(
-          "Queued Offline",
-          "No internet connection. Manhole registration has been queued and will sync automatically when connection returns.",
-        );
-      }
-
-      // Reset form
-      setCode("");
-      setUtilityType("");
-      setDepthMeters("");
-      setPhotoUri(null);
-      setInstallDate(getTodayString());
-      setCapturedLocation(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error ?? "Registration failed.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const {
+    code,
+    setCode,
+    utilityType,
+    setUtilityType,
+    depthMeters,
+    setDepthMeters,
+    installDate,
+    setInstallDate,
+    photoUri,
+    setPhotoUri,
+    capturedLocation,
+    gpsLoading,
+    submitting,
+    error,
+    captureGps,
+    handlePickImage,
+    handleTakePhoto,
+    handleSubmit,
+    setTodayDate,
+  } = useRegisterController();
 
   return (
     <SafeAreaView style={styles.flex}>
@@ -244,7 +69,6 @@ export default function RegisterScreen() {
         {/* Location Details Card */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Location Details</Text>
-
           <View style={styles.infoRow}>
             <Ionicons
               name="location-outline"
@@ -323,7 +147,6 @@ export default function RegisterScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Manhole Metadata</Text>
 
-          {/* Manhole Code */}
           <View style={styles.infoRow}>
             <Ionicons
               name="barcode-outline"
@@ -346,7 +169,6 @@ export default function RegisterScreen() {
 
           <View style={styles.divider} />
 
-          {/* Depth (meters) */}
           <View style={styles.infoRow}>
             <Ionicons
               name="swap-vertical-outline"
@@ -369,7 +191,6 @@ export default function RegisterScreen() {
 
           <View style={styles.divider} />
 
-          {/* Utility Type */}
           <View
             style={[
               styles.infoRow,
@@ -422,7 +243,6 @@ export default function RegisterScreen() {
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Media & Installation</Text>
 
-          {/* Installation Date */}
           <View style={styles.infoRow}>
             <Ionicons
               name="calendar-outline"
@@ -442,7 +262,7 @@ export default function RegisterScreen() {
                 />
                 <TouchableOpacity
                   style={styles.todayButton}
-                  onPress={() => setInstallDate(getTodayString())}
+                  onPress={setTodayDate}
                 >
                   <Text style={styles.todayButtonText}>Today</Text>
                 </TouchableOpacity>
@@ -452,7 +272,6 @@ export default function RegisterScreen() {
 
           <View style={styles.divider} />
 
-          {/* Photo Capture */}
           <View
             style={[
               styles.infoRow,
@@ -491,7 +310,6 @@ export default function RegisterScreen() {
                         Gallery
                       </Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
                       style={[
                         styles.photoActionBtn,
@@ -508,7 +326,6 @@ export default function RegisterScreen() {
                         Retake
                       </Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
                       style={[
                         styles.photoActionBtn,
@@ -536,7 +353,6 @@ export default function RegisterScreen() {
                   <Text style={styles.photoPlaceholderText}>
                     Capture a photo of the manhole to help locate it later.
                   </Text>
-
                   <View style={styles.photoActions}>
                     <TouchableOpacity
                       style={styles.photoSelectBtn}
@@ -550,7 +366,6 @@ export default function RegisterScreen() {
                       />
                       <Text style={styles.photoSelectBtnText}>Take Photo</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity
                       style={[
                         styles.photoSelectBtn,
@@ -602,14 +417,8 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Colors.background },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
+  container: { padding: 16, paddingBottom: 40 },
+  header: { alignItems: "center", marginVertical: 20 },
   iconContainer: {
     width: 80,
     height: 80,
@@ -620,11 +429,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
   },
   title: {
     fontSize: 22,
@@ -652,11 +456,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   sectionTitle: {
     fontSize: 16,
@@ -664,17 +463,9 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginBottom: 16,
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  rowIcon: {
-    marginRight: 14,
-  },
-  rowContent: {
-    flex: 1,
-  },
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
+  rowIcon: { marginRight: 14 },
+  rowContent: { flex: 1 },
   infoLabel: {
     fontSize: 11,
     color: Colors.textMuted,
@@ -682,26 +473,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginBottom: 2,
   },
-  infoValue: {
-    fontSize: 14,
-    color: Colors.text,
-  },
+  infoValue: { fontSize: 14, color: Colors.text },
   monospace: {
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     fontSize: 13,
     fontWeight: "600",
     color: Colors.text,
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 4,
-  },
-  errorTextInline: {
-    color: Colors.danger,
-    fontStyle: "italic",
-    fontSize: 14,
-  },
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 4 },
+  errorTextInline: { color: Colors.danger, fontStyle: "italic", fontSize: 14 },
   statusBadgeSuccess: {
     backgroundColor: Colors.successLight,
     paddingHorizontal: 8,
@@ -713,10 +493,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.success,
   },
-  buttonRow: {
-    marginTop: 12,
-    alignItems: "stretch",
-  },
+  buttonRow: { marginTop: 12, alignItems: "stretch" },
   actionButton: {
     height: 44,
     borderRadius: 12,
@@ -724,24 +501,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  actionButtonPrimary: {
-    backgroundColor: Colors.primary,
-  },
+  actionButtonPrimary: { backgroundColor: Colors.primary },
   actionButtonSecondary: {
     backgroundColor: Colors.primaryLight,
     borderWidth: 1,
     borderColor: Colors.primary,
   },
-  actionButtonText: {
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  actionButtonTextPrimary: {
-    color: "#fff",
-  },
-  actionButtonTextSecondary: {
-    color: Colors.primary,
-  },
+  actionButtonText: { fontWeight: "600", fontSize: 14 },
+  actionButtonTextPrimary: { color: "#fff" },
+  actionButtonTextSecondary: { color: Colors.primary },
   input: {
     height: 40,
     backgroundColor: Colors.background,
@@ -753,12 +521,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     marginTop: 6,
   },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 6,
-  },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -773,9 +536,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "capitalize",
   },
-  chipTextSelected: {
-    color: "#fff",
-  },
+  chipTextSelected: { color: "#fff" },
   dateInputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -792,11 +553,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary,
   },
-  todayButtonText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 13,
-  },
+  todayButtonText: { color: Colors.primary, fontWeight: "600", fontSize: 13 },
   photoContainer: {
     marginTop: 8,
     borderRadius: 12,
@@ -805,11 +562,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     overflow: "hidden",
   },
-  photoPreview: {
-    width: "100%",
-    height: 160,
-    resizeMode: "cover",
-  },
+  photoPreview: { width: "100%", height: 160, resizeMode: "cover" },
   photoActions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -876,11 +629,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary,
   },
-  photoSelectBtnText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 12,
-  },
+  photoSelectBtnText: { color: "#fff", fontWeight: "600", fontSize: 12 },
   photoSelectBtnTextSecondary: {
     color: Colors.primary,
     fontWeight: "600",
@@ -901,14 +650,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 20,
   },
-  submitText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  disabled: {
-    opacity: 0.6,
-  },
+  submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  disabled: { opacity: 0.6 },
   errorCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -920,10 +663,5 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 8,
   },
-  errorText: {
-    flex: 1,
-    color: Colors.danger,
-    fontWeight: "600",
-    fontSize: 14,
-  },
+  errorText: { flex: 1, color: Colors.danger, fontWeight: "600", fontSize: 14 },
 });

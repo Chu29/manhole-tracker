@@ -1,33 +1,31 @@
-import { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  Clipboard,
   ScrollView,
   Platform,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuthStore } from "../../store/use-auth-store";
-import { useLocationStore } from "../../store/use-location-store";
-import { useManholeStore } from "../../store/use-manhole-store";
-import { getPendingCount, flushQueue } from "../../services/offline-queue";
+import { useProfileController } from "../../hooks/useProfileController";
 import { Colors } from "../../constants/theme";
 
 export default function ProfileScreen() {
-  const { token, technician, logout } = useAuthStore();
-  const { stopWatching } = useLocationStore();
-  const { cachedManholes } = useManholeStore();
-  const [pendingCount, setPendingCount] = useState(0);
-  const [flushing, setFlushing] = useState(false);
-
-  useEffect(() => {
-    getPendingCount().then(setPendingCount);
-  }, []);
+  const {
+    token,
+    technician,
+    cachedManholesCount,
+    pendingCount,
+    flushing,
+    initials,
+    formattedDate,
+    handleLogout,
+    handleFlush,
+    copyToClipboard,
+  } = useProfileController();
 
   if (token && !technician) {
     return (
@@ -40,68 +38,6 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-
-  async function handleLogout() {
-    Alert.alert("Sign out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: async () => {
-          stopWatching();
-          await logout();
-        },
-      },
-    ]);
-  }
-
-  async function handleFlush() {
-    setFlushing(true);
-    try {
-      await flushQueue();
-      const remaining = await getPendingCount();
-      setPendingCount(remaining);
-      Alert.alert(
-        "Sync complete",
-        remaining === 0
-          ? "All items uploaded successfully."
-          : `${remaining} item(s) still pending — check your connection.`,
-      );
-    } catch (err) {
-      Alert.alert(
-        "Sync failed",
-        "A network error occurred. Please try again later.",
-      );
-    } finally {
-      setFlushing(false);
-    }
-  }
-
-  const copyToClipboard = (text: string, label: string) => {
-    try {
-      Clipboard.setString(text);
-      Alert.alert("Copied", `${label} copied to clipboard!`);
-    } catch (err) {
-      Alert.alert("Details", `${label}:\n${text}`);
-    }
-  };
-
-  const initials = technician?.name
-    ? technician.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2)
-    : "U";
-
-  const formattedDate = technician?.createdAt
-    ? new Date(technician.createdAt).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "N/A";
 
   return (
     <SafeAreaView style={styles.flex}>
@@ -126,7 +62,7 @@ export default function ProfileScreen() {
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Ionicons name="folder-open" size={24} color={Colors.primary} />
-            <Text style={styles.statValue}>{cachedManholes.length}</Text>
+            <Text style={styles.statValue}>{cachedManholesCount}</Text>
             <Text style={styles.statLabel}>Cached Manholes</Text>
           </View>
           <View style={styles.statCard}>
