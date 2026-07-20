@@ -7,4 +7,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Curl Render app
-        run: curl -s https://onrender.com
+        run: curl -s https://manhole-tracker-backend.onrender.com/api/health
