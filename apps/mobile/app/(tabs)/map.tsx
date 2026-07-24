@@ -6,7 +6,6 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
-  Dimensions,
   Animated,
 } from "react-native";
 import {
@@ -27,7 +26,6 @@ import { Colors, UtilityColors } from "../../constants/theme";
 import { formatDistance } from "../../services/geo";
 import { UTILITY_TYPES, MANHOLE_STATUSES } from "@manhole-tracker/shared";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const RADIUS_OPTIONS = [100, 250, 500, 1000, 2000, 5000];
 
 function getUtilityIcon(

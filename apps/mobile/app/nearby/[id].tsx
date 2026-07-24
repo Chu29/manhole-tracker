@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -98,9 +98,26 @@ export default function ManholeDetailScreen() {
   const [editInstallDate, setEditInstallDate] = useState("");
   const [editStatus, setEditStatus] = useState("");
 
+  const loadDetail = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [m, logs] = await Promise.all([
+        getManholeById(id),
+        listInspections(id),
+      ]);
+      setManhole(m);
+      setInspections(logs);
+    } catch (_err) {
+      setError("Failed to load manhole details.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     loadDetail();
-  }, [id]);
+  }, [loadDetail]);
 
   useEffect(() => {
     if (manhole) {
@@ -111,23 +128,6 @@ export default function ManholeDetailScreen() {
       setEditStatus(manhole.status);
     }
   }, [manhole]);
-
-  async function loadDetail() {
-    setLoading(true);
-    setError(null);
-    try {
-      const [m, logs] = await Promise.all([
-        getManholeById(id),
-        listInspections(id),
-      ]);
-      setManhole(m);
-      setInspections(logs);
-    } catch (err: any) {
-      setError(err.response?.data?.error ?? "Failed to load manhole details.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleUpdateCoverPhoto() {
     Alert.alert("Change Cover Photo", "Select cover photo source:", [
@@ -386,7 +386,7 @@ export default function ManholeDetailScreen() {
     try {
       Clipboard.setString(text);
       Alert.alert("Copied", `${label} copied to clipboard!`);
-    } catch (err) {
+    } catch (_err) {
       Alert.alert("Details", `${label}:\n${text}`);
     }
   };

@@ -4,7 +4,11 @@ import { Alert, Clipboard } from "react-native";
 import { useAuthStore } from "../store/use-auth-store";
 import { useLocationStore } from "../store/use-location-store";
 import { useManholeStore } from "../store/use-manhole-store";
-import { getPendingCount, flushQueue } from "../services/offline-queue";
+import {
+  getPendingCount,
+  flushQueue,
+  subscribeQueueChange,
+} from "../services/offline-queue";
 
 export function useProfileController() {
   const { token, technician, logout } = useAuthStore();
@@ -15,6 +19,13 @@ export function useProfileController() {
 
   useEffect(() => {
     getPendingCount().then(setPendingCount);
+
+    // Subscribe to live offline queue changes (e.g. background flush completed)
+    const unsubscribe = subscribeQueueChange((count) => {
+      setPendingCount(count);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleLogout = useCallback(() => {
