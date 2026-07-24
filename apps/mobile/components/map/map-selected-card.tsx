@@ -16,13 +16,13 @@ interface MapSelectedCardProps {
 }
 
 export const MapSelectedCard = React.memo(
-  ({
+  function MapSelectedCard({
     manhole,
     onNavigate,
     getUtilityIcon,
     getStatusColor,
     formatRelativeDate,
-  }: MapSelectedCardProps) => {
+  }: MapSelectedCardProps) {
     const statusColor = getStatusColor(manhole.status);
 
     return (

@@ -1,31 +1,26 @@
-/**
- * Offline write queue.
- *
- * When the device is offline, new manhole registrations and inspection logs are
- * appended to this queue instead of being sent immediately. When connectivity
- * returns (detected via NetInfo), `flushQueue()` replays them against the API
- * in order. Client-generated UUIDs on each item ensure idempotency — if the
- * device disconnects mid-flush and reconnects again, the server ignores
- * duplicate inserts (UUID primary keys + UNIQUE constraints).
- */
-
+// services/offline-queue.ts
 import NetInfo from "@react-native-community/netinfo";
-import "react-native-get-random-values"; // polyfill for crypto.getRandomValues
+import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { getJSON, storeJSON, STORAGE_KEYS } from "../utils/storage";
-import { createManhole, createInspection, updateManhole, uploadPhoto } from "../api/manholes";
+import {
+  createManhole,
+  createInspection,
+  updateManhole,
+  uploadPhoto,
+} from "../api/manholes";
 
 export type QueuedOperation =
   | {
-      id: string; // client-generated UUID used for idempotency
+      id: string;
       type: "CREATE_MANHOLE";
-      payload: Parameters<typeof createManhole>[0];
+      payload: Parameters<typeof createManhole>[0] & { id?: string };
     }
   | {
       id: string;
       type: "CREATE_INSPECTION";
       manholeId: string;
-      payload: Parameters<typeof createInspection>[1];
+      payload: Parameters<typeof createInspection>[1] & { id?: string };
     }
   | {
       id: string;
@@ -50,6 +45,20 @@ export type QueuedOperationPayload =
       payload: Parameters<typeof updateManhole>[1];
     };
 
+let isFlushing = false;
+type QueueChangeListener = (pendingCount: number) => void;
+const queueListeners = new Set<QueueChangeListener>();
+
+export function subscribeQueueChange(
+  listener: QueueChangeListener,
+): () => void {
+  queueListeners.add(listener);
+  return () => queueListeners.delete(listener);
+}
+
+function notifyQueueChange(count: number) {
+  queueListeners.forEach((listener) => listener(count));
+}
 
 async function readQueue(): Promise<QueuedOperation[]> {
   return (await getJSON<QueuedOperation[]>(STORAGE_KEYS.OFFLINE_QUEUE)) ?? [];
@@ -57,6 +66,7 @@ async function readQueue(): Promise<QueuedOperation[]> {
 
 async function writeQueue(queue: QueuedOperation[]): Promise<void> {
   await storeJSON(STORAGE_KEYS.OFFLINE_QUEUE, queue);
+  notifyQueueChange(queue.length);
 }
 
 export async function enqueue(op: QueuedOperationPayload): Promise<void> {
@@ -69,76 +79,89 @@ export async function getPendingCount(): Promise<number> {
   return (await readQueue()).length;
 }
 
-/**
- * Attempt to flush all queued operations in order.
- * Stops on the first network failure and retains the un-sent remainder.
- * Call this in the NetInfo `isConnected` listener in the root layout.
- */
+async function removeOperationFromQueue(id: string): Promise<void> {
+  const queue = await readQueue();
+  const updatedQueue = queue.filter((op) => op.id !== id);
+  await writeQueue(updatedQueue);
+}
+
 export async function flushQueue(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<void> {
-  let queue = await readQueue();
-  if (queue.length === 0) return;
+  if (isFlushing) return;
+  isFlushing = true;
 
-  const total = queue.length;
-  const remaining: QueuedOperation[] = [];
+  try {
+    const queue = await readQueue();
+    if (queue.length === 0) return;
 
-  for (let i = 0; i < queue.length; i++) {
-    const op = queue[i];
-    try {
-      if (op.type === "CREATE_MANHOLE") {
-        const payload = { ...op.payload };
-        if (
-          payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
-        ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
+    const total = queue.length;
+
+    for (let i = 0; i < queue.length; i++) {
+      const op = queue[i];
+
+      try {
+        if (op.type === "CREATE_MANHOLE") {
+          const payload = { ...op.payload, id: op.id };
+          if (
+            payload.photoUrl &&
+            (payload.photoUrl.startsWith("file://") ||
+              payload.photoUrl.startsWith("content://") ||
+              payload.photoUrl.startsWith("ph://"))
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await createManhole(payload);
+        } else if (op.type === "CREATE_INSPECTION") {
+          const payload = { ...op.payload, id: op.id };
+          if (
+            payload.photoUrl &&
+            (payload.photoUrl.startsWith("file://") ||
+              payload.photoUrl.startsWith("content://") ||
+              payload.photoUrl.startsWith("ph://"))
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await createInspection(op.manholeId, payload);
+        } else if (op.type === "UPDATE_MANHOLE") {
+          const payload = { ...op.payload };
+          if (
+            payload.photoUrl &&
+            (payload.photoUrl.startsWith("file://") ||
+              payload.photoUrl.startsWith("content://") ||
+              payload.photoUrl.startsWith("ph://"))
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await updateManhole(op.manholeId, payload);
         }
-        await createManhole(payload);
-      } else if (op.type === "CREATE_INSPECTION") {
-        const payload = { ...op.payload };
+
+        await removeOperationFromQueue(op.id);
+        onProgress?.(i + 1, total);
+      } catch (err: any) {
+        console.error("Failed to sync operation:", op, err);
+        const status = err?.response?.status;
         if (
-          payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
+          status &&
+          status >= 400 &&
+          status < 500 &&
+          status !== 429 &&
+          status !== 408
         ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
+          await removeOperationFromQueue(op.id);
+          continue;
         }
-        await createInspection(op.manholeId, payload);
-      } else if (op.type === "UPDATE_MANHOLE") {
-        const payload = { ...op.payload };
-        if (
-          payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
-        ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
-        }
-        await updateManhole(op.manholeId, payload);
+        break;
       }
-      onProgress?.(i + 1, total);
-    } catch (err) {
-      console.error("Failed to sync operation:", op, err);
-      // Keep this item and everything after it — retry next flush cycle.
-      remaining.push(...queue.slice(i));
-      break;
     }
+  } finally {
+    isFlushing = false;
   }
-
-  await writeQueue(remaining);
 }
 
-/**
- * Register a NetInfo listener that auto-flushes the queue whenever connectivity
- * is restored. Call once in the root layout and store the returned unsubscribe fn.
- */
 export function startQueueFlusher(
   onProgress?: (completed: number, total: number) => void,
 ): () => void {

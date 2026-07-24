@@ -16,7 +16,7 @@ function getTodayString(): string {
 
 export function useRegisterController() {
   const { addOrUpdateManhole } = useManholeStore();
-  const { currentLocation, startWatching } = useLocationStore();
+  const { currentLocation, startWatching, stopWatching } = useLocationStore();
 
   const [code, setCode] = useState("");
   const [utilityType, setUtilityType] = useState<
@@ -34,9 +34,14 @@ export function useRegisterController() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Add cleanup in hooks/useRegisterController.ts
+
   useEffect(() => {
     startWatching();
-  }, [startWatching]);
+    return () => {
+      stopWatching(); // Clean up location watcher when leaving the screen
+    };
+  }, [startWatching, stopWatching]);
 
   useEffect(() => {
     if (currentLocation && !capturedLocation) {
