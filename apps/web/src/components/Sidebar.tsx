@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Map as MapIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, Map as MapIcon, LogOut, Users } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import './Sidebar.css';
 
@@ -21,6 +21,10 @@ export function Sidebar() {
         <NavLink to="/map" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MapIcon size={20} />
           <span>Map View</span>
+        </NavLink>
+        <NavLink to="/technicians" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Users size={20} />
+          <span>Technicians</span>
         </NavLink>
       </nav>
 

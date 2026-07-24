@@ -1,0 +1,35 @@
+.technicians-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+}
+
+.role-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  transition: var(--transition-fast);
+}
+
+.role-select:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.role-admin {
+  color: var(--accent-primary);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+.role-admin:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.role-tech {
+  color: var(--text-primary);
+}

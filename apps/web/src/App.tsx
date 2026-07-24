@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { MapView } from './pages/MapView';
+import { Technicians } from './pages/Technicians';
 import './App.css';
 
 function ProtectedLayout() {
@@ -40,6 +41,7 @@ function App() {
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/map" element={<MapView />} />
+          <Route path="/technicians" element={<Technicians />} />
         </Route>
       </Routes>
     </BrowserRouter>
