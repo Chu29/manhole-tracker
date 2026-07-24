@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import manholeRoutes from "./routes/manholes.routes.js";
 import uploadRoutes from "./routes/uploads.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 const app = express();
@@ -16,6 +17,7 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/manholes", manholeRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 for unmatched API routes
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
