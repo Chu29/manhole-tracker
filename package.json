@@ -15,11 +15,15 @@
     "backend": "npm run dev --workspace=apps/backend",
     "backend:dev": "npm run dev --workspace=apps/backend",
     "backend:migrate": "npm run migrate --workspace=apps/backend",
-    "lint": "npm run lint --workspace=apps/mobile"
+    "lint": "npm run lint --workspace=apps/mobile",
+    "test": "npm run test --workspaces --if-present"
   },
   "overrides": {
     "react-native-worklets": "0.5.1"
   },
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "react-test-renderer": "^19.2.8"
+  }
 }
