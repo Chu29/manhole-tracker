@@ -243,6 +243,7 @@ export async function updateManhole(req, res) {
 
 // DELETE /manholes/:id
 export async function deleteManhole(req, res) {
+  await query("DELETE FROM inspection_logs WHERE manhole_id = $1", [req.params.id]);
   await query("DELETE FROM manholes WHERE id = $1", [req.params.id]);
   res.status(204).send();
 }

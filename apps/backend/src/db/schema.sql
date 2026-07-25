@@ -46,7 +46,7 @@ END $$;
 
 CREATE TABLE IF NOT EXISTS inspection_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  manhole_id UUID REFERENCES manholes(id),
+  manhole_id UUID REFERENCES manholes(id) ON DELETE CASCADE,
   technician_id UUID REFERENCES technicians(id),
   notes TEXT,
   photo_url TEXT,

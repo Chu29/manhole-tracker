@@ -1,51 +1,71 @@
 "use client";
 
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import { useState } from "react";
 import Link from "next/link";
-import "leaflet/dist/leaflet.css";
+import { APIProvider, Map, Marker, InfoWindow } from "@vis.gl/react-google-maps";
 import { Manhole } from "@/lib/api";
 import { statusColor, StatusPip } from "./StatusPip";
 
 export function ManholeMap({ manholes }: { manholes: Manhole[] }) {
-  const center: [number, number] =
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const center =
     manholes.length > 0
-      ? [manholes[0].lat, manholes[0].lng]
-      : [12.9716, 77.5946]; // fallback center — swap for your city
+      ? { lat: manholes[0].lat, lng: manholes[0].lng }
+      : { lat: 12.9716, lng: 77.5946 }; // fallback center — swap for your city
+
+  const selectedManhole = manholes.find((m) => m.id === selectedId);
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey) {
+    return (
+      <div className="flex h-[480px] w-full items-center justify-center rounded-lg border border-ink-700 bg-ink-900 text-mist">
+        <p>Google Maps API key missing. Please restart your dev server.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-lg border border-ink-700">
-      <MapContainer center={center} zoom={14} style={{ height: 480, width: "100%" }}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {manholes.map((m) => (
-          <CircleMarker
-            key={m.id}
-            center={[m.lat, m.lng]}
-            radius={8}
-            pathOptions={{
-              color: statusColor(m.status),
-              fillColor: statusColor(m.status),
-              fillOpacity: 0.65,
-              weight: 2,
-            }}
+      <APIProvider apiKey={apiKey}>
+        <div style={{ height: 480, width: "100%" }}>
+          <Map 
+            defaultCenter={center} 
+            defaultZoom={14} 
+            disableDefaultUI={true}
           >
-            <Popup>
-              <div className="flex flex-col gap-1">
-                <span className="font-mono text-sm text-mist">{m.code}</span>
-                <StatusPip status={m.status} />
-                <Link
-                  href={`/manholes/${m.id}`}
-                  className="mt-1 text-xs text-survey underline"
-                >
-                  View / edit
-                </Link>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
-      </MapContainer>
+            {manholes.map((m) => (
+              <Marker
+                key={m.id}
+                position={{ lat: m.lat, lng: m.lng }}
+                onClick={() => setSelectedId(m.id)}
+              />
+            ))}
+
+            {selectedManhole && (
+              <InfoWindow
+                position={{ lat: selectedManhole.lat, lng: selectedManhole.lng }}
+                onCloseClick={() => setSelectedId(null)}
+                pixelOffset={[0, -30]}
+              >
+                <div className="flex flex-col gap-1 min-w-[120px]">
+                  <span className="font-mono text-sm font-bold text-gray-800">
+                    {selectedManhole.code}
+                  </span>
+                  <StatusPip status={selectedManhole.status} showLabel />
+                  <Link
+                    href={`/manholes/${selectedManhole.id}`}
+                    className="mt-2 text-xs text-blue-600 underline"
+                  >
+                    View / edit
+                  </Link>
+                </div>
+              </InfoWindow>
+            )}
+          </Map>
+        </div>
+      </APIProvider>
     </div>
   );
 }

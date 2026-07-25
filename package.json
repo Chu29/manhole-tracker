@@ -11,6 +11,9 @@
     "backend": "pnpm --filter backend run dev",
     "backend:dev": "pnpm --filter backend run dev",
     "backend:migrate": "pnpm --filter backend run migrate",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "setup:local": "pnpm run db:up && echo 'Waiting for database...' && sleep 5 && pnpm run backend:migrate",
     "lint": "pnpm --filter mobile run lint",
     "dev:admin": "pnpm --filter @manhole-tracker/admin run dev"
   },
