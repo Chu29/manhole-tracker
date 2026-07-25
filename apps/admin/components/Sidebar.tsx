@@ -19,7 +19,9 @@ export function Sidebar() {
     <aside className="flex h-screen w-56 flex-col justify-between border-r border-ink-700 bg-ink-900/80 px-4 py-6">
       <div>
         <div className="mb-8 px-2">
-          <p className="font-display text-lg font-700 text-mist">Manhole</p>
+          <p className="font-display text-lg font-700 text-mist">
+            Manhole Tracker
+          </p>
           <p className="font-mono text-[11px] uppercase tracking-widest text-caution">
             Admin Console
           </p>
@@ -34,16 +36,6 @@ export function Sidebar() {
             }`}
           >
             Manholes
-          </Link>
-          <Link
-            href="/manholes/new"
-            className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === "/manholes/new"
-                ? "bg-ink-800 text-mist"
-                : "text-haze hover:bg-ink-800 hover:text-mist"
-            }`}
-          >
-            Register manhole
           </Link>
         </nav>
       </div>

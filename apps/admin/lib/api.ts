@@ -31,8 +31,6 @@ api.interceptors.response.use(
   },
 );
 
-// ---- Auth ------------------------------------------------------------------
-
 export async function login(email: string, password: string) {
   const { data } = await api.post<{ token: string }>("/auth/login", {
     email,
@@ -41,8 +39,6 @@ export async function login(email: string, password: string) {
   return data.token;
 }
 
-// ---- Manholes ---------------------------------------------------------------
-
 export async function listManholes() {
   const { data } = await api.get<Manhole[]>("/manholes");
   return data;
@@ -50,11 +46,6 @@ export async function listManholes() {
 
 export async function getManhole(id: string) {
   const { data } = await api.get<Manhole>(`/manholes/${id}`);
-  return data;
-}
-
-export async function createManhole(input: ManholeInput) {
-  const { data } = await api.post<Manhole>("/manholes", input);
   return data;
 }
 

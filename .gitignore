@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.local
+apps/admin/.env.local
 apps/mobile/.expo/
 apps/backend/dist/
 *.log
