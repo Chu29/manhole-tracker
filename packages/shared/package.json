@@ -5,8 +5,12 @@
   "private": true,
   "type": "module",
   "main": "constants.js",
+  "types": "types.ts",
   "exports": {
-    ".": "./constants.js"
+    ".": {
+      "types": "./types.ts",
+      "default": "./constants.js"
+    }
   },
   "scripts": {
     "test": "echo \"(no tests in shared yet)\""

@@ -8,6 +8,7 @@ import {
   updateManhole,
   deleteManhole,
   inspectManhole,
+  getAllManholes,
 } from "../controllers/manhole.controller.js";
 import {
   createInspection,
@@ -18,6 +19,7 @@ const router = Router();
 
 router.use(requireAuth); // every route below requires auth, per spec §5
 
+router.get("/", asyncHandler(getAllManholes));
 router.post("/", asyncHandler(createManhole));
 
 // IMPORTANT: /nearby must be declared before /:id or Express will treat

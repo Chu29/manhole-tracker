@@ -1,39 +1,6 @@
 import apiClient from "./client";
-
-export interface Manhole {
-  id: string;
-  code: string | null;
-  lat: number;
-  lng: number;
-  utilityType: "sewer" | "electrical" | "telecom" | "water" | null;
-  depthMeters: number | null;
-  status: string;
-  photoUrl: string | null;
-  installDate: string | null;
-  lastInspectedAt: string | null;
-  lastInspectedBy: string | null;
-  distanceMeters?: number; // present on /nearby results
-  createdAt: string;
-}
-
-export interface Inspection {
-  id: string;
-  manholeId: string;
-  technicianId: string;
-  notes: string | null;
-  photoUrl: string | null;
-  createdAt: string;
-}
-
-export interface CreateManholePayload {
-  lat: number;
-  lng: number;
-  code?: string;
-  utilityType?: Manhole["utilityType"];
-  depthMeters?: number;
-  photoUrl?: string;
-  installDate?: string;
-}
+import type { Manhole, ManholeInput as CreateManholePayload, Inspection, ManholeStatus, UtilityType } from "@manhole-tracker/shared";
+export type { Manhole, CreateManholePayload, Inspection, ManholeStatus, UtilityType };
 
 // GET /manholes/nearby?lat=&lng=&radius=
 export async function fetchNearbyManholes(

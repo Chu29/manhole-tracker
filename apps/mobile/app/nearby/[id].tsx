@@ -232,7 +232,7 @@ export default function ManholeDetailScreen() {
       utilityType: (editUtilityType || undefined) as any,
       depthMeters: editDepth ? Number(editDepth) : undefined,
       installDate: editInstallDate.trim() || undefined,
-      status: editStatus || undefined,
+      status: (editStatus || undefined) as any,
     };
 
     setIsUpdating(true);
@@ -257,7 +257,7 @@ export default function ManholeDetailScreen() {
           utilityType: (editUtilityType || null) as any,
           depthMeters: editDepth ? Number(editDepth) : null,
           installDate: editInstallDate.trim() || null,
-          status: editStatus || manhole!.status,
+          status: (editStatus || manhole!.status) as any,
         };
         setManhole(localUpdated);
         addOrUpdateManhole(localUpdated);
