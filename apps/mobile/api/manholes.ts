@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
-import apiClient from "./client";
+import apiClient, { BASE_URL } from "./client";
+import { useAuthStore } from "../store/use-auth-store";
 import type { Manhole, ManholeInput as CreateManholePayload, Inspection, ManholeStatus, UtilityType } from "@manhole-tracker/shared";
 export type { Manhole, CreateManholePayload, Inspection, ManholeStatus, UtilityType };
 
@@ -66,6 +67,7 @@ export async function listInspections(
 
 // POST /uploads/photo
 export async function uploadPhoto(uri: string): Promise<{ photoUrl: string }> {
+  const token = useAuthStore.getState().token;
   const formData = new FormData();
   let filename = uri.split("/").pop() || "photo.jpg";
   if (!filename.includes(".")) {
@@ -87,26 +89,23 @@ export async function uploadPhoto(uri: string): Promise<{ photoUrl: string }> {
     } as any);
   }
 
-  const { data } = await apiClient.post<{ photoUrl: string }>(
-    "/uploads/photo",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [(data, headers) => {
-        if (headers) {
-          if (typeof headers.delete === "function") {
-            headers.delete("Content-Type");
-            headers.delete("content-type");
-          }
-          delete headers["Content-Type"];
-          delete headers["content-type"];
-        }
-        return data;
-      }],
-    },
-  );
-  return data;
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BASE_URL}/api/uploads/photo`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorJson = await response.json().catch(() => ({}));
+    throw new Error(errorJson.error || `Photo upload failed with status ${response.status}`);
+  }
+
+  return await response.json();
 }
+
 

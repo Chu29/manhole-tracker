@@ -77,7 +77,8 @@ router.post(
 
     await fs.promises.writeFile(filepath, req.file.buffer);
 
-    const photoUrl = `${req.protocol}://${req.get("host")}/uploads/${filename}`;
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const photoUrl = `${protocol}://${req.get("host")}/uploads/${filename}`;
     res.status(200).json({ photoUrl });
   }),
 );
