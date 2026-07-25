@@ -34,6 +34,7 @@ export default function NearbyScreen() {
     handleRadiusChange,
     handleRefresh,
     createPressHandler,
+    createDetailHandler,
   } = useNearbyController();
 
   if (permissionGranted === false) {
@@ -93,6 +94,7 @@ export default function NearbyScreen() {
             <ManholeListItem
               manhole={item}
               onPress={createPressHandler(item)}
+              onViewDetails={createDetailHandler(item.id)}
             />
           </Animated.View>
         )}

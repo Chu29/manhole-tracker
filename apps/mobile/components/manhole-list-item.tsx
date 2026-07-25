@@ -1,4 +1,5 @@
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Manhole } from "../api/manholes";
 import { formatDistance } from "../services/geo";
 import { Colors, UtilityColors } from "../constants/theme";
@@ -6,9 +7,10 @@ import { Colors, UtilityColors } from "../constants/theme";
 interface Props {
   manhole: Manhole;
   onPress: () => void;
+  onViewDetails?: () => void;
 }
 
-export function ManholeListItem({ manhole, onPress }: Props) {
+export function ManholeListItem({ manhole, onPress, onViewDetails }: Props) {
   const utilityColor = manhole.utilityType
     ? (UtilityColors[manhole.utilityType] ?? Colors.primary)
     : Colors.textMuted;
@@ -26,16 +28,29 @@ export function ManholeListItem({ manhole, onPress }: Props) {
         </View>
 
         <View style={styles.metaRow}>
-          {manhole.utilityType && (
-            <Text style={[styles.tag, { color: utilityColor }]}>
-              {manhole.utilityType.toUpperCase()}
-            </Text>
-          )}
-          <StatusDot status={manhole.status} />
-          {manhole.lastInspectedAt && (
-            <Text style={styles.inspectedText}>
-              Inspected {formatRelativeDate(manhole.lastInspectedAt)}
-            </Text>
+          <View style={styles.metaLeft}>
+            {manhole.utilityType && (
+              <Text style={[styles.tag, { color: utilityColor }]}>
+                {manhole.utilityType.toUpperCase()}
+              </Text>
+            )}
+            <StatusDot status={manhole.status} />
+            {manhole.lastInspectedAt && (
+              <Text style={styles.inspectedText}>
+                Inspected {formatRelativeDate(manhole.lastInspectedAt)}
+              </Text>
+            )}
+          </View>
+
+          {onViewDetails && (
+            <TouchableOpacity
+              onPress={onViewDetails}
+              activeOpacity={0.6}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.eyeIconWrapper}
+            >
+              <Ionicons name="eye" size={28} color={Colors.primary} />
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -110,8 +125,17 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  metaLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
+    flexShrink: 1,
+  },
+  eyeIconWrapper: {
+    paddingLeft: 8,
   },
   tag: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
