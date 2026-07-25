@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import apiClient from "./client";
 import type { Manhole, ManholeInput as CreateManholePayload, Inspection, ManholeStatus, UtilityType } from "@manhole-tracker/shared";
 export type { Manhole, CreateManholePayload, Inspection, ManholeStatus, UtilityType };
@@ -66,15 +67,25 @@ export async function listInspections(
 // POST /uploads/photo
 export async function uploadPhoto(uri: string): Promise<{ photoUrl: string }> {
   const formData = new FormData();
-  const filename = uri.split("/").pop() || "photo.jpg";
+  let filename = uri.split("/").pop() || "photo.jpg";
+  if (!filename.includes(".")) {
+    filename += ".jpg";
+  }
   const match = /\.(\w+)$/.exec(filename);
-  const type = match ? `image/${match[1]}` : `image/jpeg`;
+  const ext = match ? match[1].toLowerCase() : "jpg";
+  const type = ext === "png" ? "image/png" : ext === "heic" ? "image/heic" : "image/jpeg";
 
-  formData.append("photo", {
-    uri,
-    name: filename,
-    type,
-  } as any);
+  if (Platform.OS === "web") {
+    const res = await fetch(uri);
+    const blob = await res.blob();
+    formData.append("photo", blob, filename);
+  } else {
+    formData.append("photo", {
+      uri,
+      name: filename,
+      type,
+    } as any);
+  }
 
   const { data } = await apiClient.post<{ photoUrl: string }>(
     "/uploads/photo",
@@ -83,7 +94,19 @@ export async function uploadPhoto(uri: string): Promise<{ photoUrl: string }> {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      transformRequest: [(data, headers) => {
+        if (headers) {
+          if (typeof headers.delete === "function") {
+            headers.delete("Content-Type");
+            headers.delete("content-type");
+          }
+          delete headers["Content-Type"];
+          delete headers["content-type"];
+        }
+        return data;
+      }],
     },
   );
   return data;
 }
+
