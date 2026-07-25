@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,7 +15,6 @@ import {
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import { useMapController } from "../../hooks/useMapController";
-import { MapSelectedCard } from "../../components/map/map-selected-card";
 import { OfflineBanner } from "../../components/offline-banner";
 import { Colors, UtilityColors } from "../../constants/theme";
 import { formatDistance } from "../../services/geo";
@@ -54,19 +54,20 @@ function getStatusColor(status: string) {
   }
 }
 
-function formatRelativeDate(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
-
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const controller = useMapController();
+  const markerRefs = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    if (controller.selectedManhole?.id) {
+      const selectedId = controller.selectedManhole.id;
+      const timer = setTimeout(() => {
+        markerRefs.current[selectedId]?.showCallout();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [controller.selectedManhole]);
 
   if (controller.permissionGranted === false) {
     return (
@@ -148,6 +149,11 @@ export default function MapScreen() {
         {controller.filteredList.map((m) => (
           <Marker
             key={m.id}
+            ref={(ref) => {
+              if (ref) {
+                markerRefs.current[m.id] = ref;
+              }
+            }}
             coordinate={{ latitude: m.lat, longitude: m.lng }}
             title={m.code ?? "Manhole"}
             description={

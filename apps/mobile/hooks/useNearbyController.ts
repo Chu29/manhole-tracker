@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useManholeStore } from "../store/use-manhole-store";
 import { useLocationStore } from "../store/use-location-store";
 import { formatDistance } from "../services/geo";
+import { Manhole } from "../api/manholes";
 
 export function useNearbyController() {
   const {
@@ -34,9 +35,15 @@ export function useNearbyController() {
     }
   };
 
-  // Pre-curry the router push to clean up the FlatList render loop
-  const createPressHandler = (id: string) => () => {
-    router.push(`/nearby/${id}`);
+  const createPressHandler = (manhole: Manhole) => () => {
+    router.push({
+      pathname: "/(tabs)/map",
+      params: {
+        manholeId: manhole.id,
+        lat: String(manhole.lat),
+        lng: String(manhole.lng),
+      },
+    });
   };
 
   const stats = useMemo(() => {
