@@ -5,7 +5,7 @@ import { DEFAULT_API_BASE_URL } from '@manhole-tracker/shared';
 // Set this to your machine's LAN IP when testing on a physical device.
 // Expo Go on a real phone cannot reach `localhost` — it needs your dev machine's
 // actual IP on the same Wi-Fi network, e.g. http://192.168.1.42:3000
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
 
 const apiClient = axios.create({
   baseURL: `${BASE_URL}/api`,
