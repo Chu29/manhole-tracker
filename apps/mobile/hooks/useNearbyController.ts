@@ -46,6 +46,10 @@ export function useNearbyController() {
     });
   };
 
+  const createDetailHandler = (id: string) => () => {
+    router.push(`/nearby/${id}`);
+  };
+
   const stats = useMemo(() => {
     const total = sortedList.length;
     const closest = sortedList.find((m) => m.distanceMeters !== undefined);
@@ -73,5 +77,6 @@ export function useNearbyController() {
     handleRadiusChange,
     handleRefresh,
     createPressHandler,
+    createDetailHandler,
   };
 }
