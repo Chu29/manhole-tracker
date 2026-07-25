@@ -92,7 +92,7 @@ export default function NearbyScreen() {
             {/* Matches your exact component specification */}
             <ManholeListItem
               manhole={item}
-              onPress={createPressHandler(item.id)}
+              onPress={createPressHandler(item)}
             />
           </Animated.View>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MapView from "react-native-maps";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useManholeStore } from "../store/use-manhole-store";
 import { useLocationStore } from "../store/use-location-store";
 import { Manhole } from "../api/manholes";
@@ -22,6 +22,12 @@ export function useMapController() {
     requestPermission,
   } = useLocationStore();
 
+  const { manholeId, lat, lng } = useLocalSearchParams<{
+    manholeId?: string;
+    lat?: string;
+    lng?: string;
+  }>();
+
   const mapRef = useRef<MapView>(null);
 
   const [selectedUtility, setSelectedUtility] = useState<string | null>(null);
@@ -33,6 +39,27 @@ export function useMapController() {
   useEffect(() => {
     startWatching();
   }, [startWatching]);
+
+  useEffect(() => {
+    if (manholeId) {
+      const found = sortedList.find((m) => m.id === manholeId);
+      if (found) {
+        setSelectedManhole(found);
+      }
+    }
+    if (lat && lng) {
+      const targetLat = parseFloat(lat);
+      const targetLng = parseFloat(lng);
+      if (!isNaN(targetLat) && !isNaN(targetLng)) {
+        mapRef.current?.animateToRegion({
+          latitude: targetLat,
+          longitude: targetLng,
+          latitudeDelta: 0.003,
+          longitudeDelta: 0.003,
+        });
+      }
+    }
+  }, [manholeId, lat, lng, sortedList]);
 
   const filteredList = useMemo(() => {
     let list = sortedList;
