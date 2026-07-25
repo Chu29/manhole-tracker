@@ -3,3 +3,4 @@ node_modules/
 apps/mobile/.expo/
 apps/backend/dist/
 *.log
+apps/admin/.next

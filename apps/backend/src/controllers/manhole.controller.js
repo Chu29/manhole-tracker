@@ -146,6 +146,20 @@ export async function getNearbyManholes(req, res) {
   res.json(rows.map(toManholeDTO));
 }
 
+// GET /manholes
+export async function getAllManholes(req, res) {
+  const { rows } = await query(
+    `SELECT id, code,
+       ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng,
+       utility_type, depth_meters, status, photo_url, install_date,
+       last_inspected_at, last_inspected_by, created_at
+     FROM manholes
+     ORDER BY created_at DESC`
+  );
+
+  res.json(rows.map(toManholeDTO));
+}
+
 // GET /manholes/:id
 export async function getManholeById(req, res) {
   const { rows } = await query(

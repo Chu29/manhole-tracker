@@ -3,19 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "description": "Manhole tracking app — monorepo (React Native mobile app + Node/Express backend)",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "engines": {
     "node": ">=20.19.0"
   },
   "scripts": {
-    "mobile": "npm run start --workspace=apps/mobile",
-    "backend": "npm run dev --workspace=apps/backend",
-    "backend:dev": "npm run dev --workspace=apps/backend",
-    "backend:migrate": "npm run migrate --workspace=apps/backend",
-    "lint": "npm run lint --workspace=apps/mobile"
+    "mobile": "pnpm --filter mobile run start",
+    "backend": "pnpm --filter backend run dev",
+    "backend:dev": "pnpm --filter backend run dev",
+    "backend:migrate": "pnpm --filter backend run migrate",
+    "lint": "pnpm --filter mobile run lint",
+    "dev:admin": "pnpm --filter @manhole-tracker/admin run dev"
   },
   "overrides": {
     "react-native-worklets": "0.5.1"

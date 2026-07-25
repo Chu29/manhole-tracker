@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-ink-950 text-mist font-body;
+  }
+
+  ::selection {
+    background: rgba(245, 166, 35, 0.35);
+  }
+
+  *:focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+  }
+}
+
+.leaflet-container {
+  background: #0f172a !important;
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #16213a;
+  color: #e8ecf1;
+  border: 1px solid #1e2c4a;
+}
+
+.leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.7) !important;
+  color: #94a3b8 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}

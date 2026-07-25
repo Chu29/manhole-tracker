@@ -21,3 +21,6 @@ export const MAX_RADIUS_METERS = 5000;
 export const UTILITY_TYPES = ["sewer", "electrical", "telecom", "water"];
 
 export const MANHOLE_STATUSES = ["active", "inactive", "buried", "damaged"];
+
+/** Default fallback API URL if env vars are missing */
+export const DEFAULT_API_BASE_URL = "http://localhost:3000";
