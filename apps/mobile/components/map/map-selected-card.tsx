@@ -149,6 +149,7 @@ export const MapSelectedCard = React.memo(
     );
   },
 );
+MapSelectedCard.displayName = "MapSelectedCard";
 
 const styles = StyleSheet.create({
   selectedCard: {

@@ -90,9 +90,8 @@ export async function flushQueue(
         const payload = { ...op.payload };
         if (
           payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
+          !payload.photoUrl.startsWith("http://") &&
+          !payload.photoUrl.startsWith("https://")
         ) {
           const { photoUrl } = await uploadPhoto(payload.photoUrl);
           payload.photoUrl = photoUrl;
@@ -102,9 +101,8 @@ export async function flushQueue(
         const payload = { ...op.payload };
         if (
           payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
+          !payload.photoUrl.startsWith("http://") &&
+          !payload.photoUrl.startsWith("https://")
         ) {
           const { photoUrl } = await uploadPhoto(payload.photoUrl);
           payload.photoUrl = photoUrl;
@@ -114,9 +112,8 @@ export async function flushQueue(
         const payload = { ...op.payload };
         if (
           payload.photoUrl &&
-          (payload.photoUrl.startsWith("file://") ||
-            payload.photoUrl.startsWith("content://") ||
-            payload.photoUrl.startsWith("ph://"))
+          !payload.photoUrl.startsWith("http://") &&
+          !payload.photoUrl.startsWith("https://")
         ) {
           const { photoUrl } = await uploadPhoto(payload.photoUrl);
           payload.photoUrl = photoUrl;
