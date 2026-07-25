@@ -6,8 +6,6 @@ import {
   ScrollView,
   Platform,
   ActivityIndicator,
-  Dimensions,
-  Animated,
 } from "react-native";
 import {
   SafeAreaView,
@@ -15,19 +13,13 @@ import {
 } from "react-native-safe-area-context";
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
-import { PanGestureHandler } from "react-native-gesture-handler";
-import {
-  useMapController,
-  SHEET_MAX_HEIGHT,
-  SHEET_MIN_HEIGHT,
-} from "../../hooks/useMapController";
+import { useMapController } from "../../hooks/useMapController";
 import { MapSelectedCard } from "../../components/map/map-selected-card";
 import { OfflineBanner } from "../../components/offline-banner";
 import { Colors, UtilityColors } from "../../constants/theme";
 import { formatDistance } from "../../services/geo";
 import { UTILITY_TYPES, MANHOLE_STATUSES } from "@manhole-tracker/shared";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const RADIUS_OPTIONS = [100, 250, 500, 1000, 2000, 5000];
 
 function getUtilityIcon(
@@ -381,7 +373,7 @@ export default function MapScreen() {
       <View
         style={[
           styles.fabColumn,
-          { bottom: insets.bottom + SHEET_MIN_HEIGHT + 16 },
+          { bottom: insets.bottom + (controller.selectedManhole ? 150 : 16) },
         ]}
       >
         <TouchableOpacity
@@ -423,164 +415,6 @@ export default function MapScreen() {
           <Ionicons name="navigate" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
-
-      {/* Hardware Accelerated Action Sheet Container */}
-      <Animated.View
-        style={[
-          styles.sheet,
-          {
-            transform: [
-              {
-                translateY: Animated.add(
-                  new Animated.Value(SHEET_MAX_HEIGHT - SHEET_MIN_HEIGHT),
-                  controller.totalTranslateY,
-                ),
-              },
-            ],
-          },
-        ]}
-      >
-        {/* Wrap ONLY the header drag areas inside the gesture tracker */}
-        <PanGestureHandler
-          onGestureEvent={controller.onGestureEvent}
-          onHandlerStateChange={controller.onHandlerStateChange}
-        >
-          <Animated.View style={styles.gestureHeaderContainer}>
-            {/* Gesture Drag Zone Target Bar */}
-            <TouchableOpacity
-              style={styles.sheetHandleArea}
-              onPress={controller.toggleSheet}
-              activeOpacity={0.8}
-            >
-              <View style={styles.sheetHandle} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetHeader}
-              onPress={controller.toggleSheet}
-              activeOpacity={0.8}
-            >
-              <View style={styles.sheetTitleRow}>
-                <Ionicons name="list" size={18} color={Colors.text} />
-                <Text style={styles.sheetTitle}>
-                  {controller.selectedManhole
-                    ? "Selected Manhole"
-                    : "Nearby Manholes"}
-                </Text>
-              </View>
-              <View style={styles.sheetCountBadge}>
-                <Text style={styles.sheetCountText}>
-                  {controller.filteredList.length}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        </PanGestureHandler>
-
-        {/* ScrollView separated out with its own clean constraints */}
-        <ScrollView
-          style={styles.scrollContainer}
-          showsVerticalScrollIndicator={true}
-          contentContainerStyle={[
-            styles.sheetContent,
-            { paddingBottom: insets.bottom + 40 },
-          ]}
-        >
-          {controller.selectedManhole && (
-            <MapSelectedCard
-              manhole={controller.selectedManhole}
-              onNavigate={controller.handleNavigateToDetail}
-              getUtilityIcon={getUtilityIcon}
-              getStatusColor={getStatusColor}
-              formatRelativeDate={formatRelativeDate}
-            />
-          )}
-
-          {controller.selectedManhole && controller.filteredList.length > 1 && (
-            <View style={styles.listSectionHeader}>
-              <Ionicons
-                name="locate-outline"
-                size={16}
-                color={Colors.textMuted}
-              />
-              <Text style={styles.listSectionTitle}>Other Nearby</Text>
-            </View>
-          )}
-
-          {controller.filteredList
-            .filter((m) => m.id !== controller.selectedManhole?.id)
-            .map((m) => (
-              <TouchableOpacity
-                key={m.id}
-                style={styles.listCard}
-                onPress={() => controller.handleSelectFromList(m)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.listCardBody}>
-                  <View style={styles.listCardTopRow}>
-                    <Text style={styles.listCardCode} numberOfLines={1}>
-                      {m.code ?? "Unnamed"}
-                    </Text>
-                    {m.distanceMeters !== undefined && (
-                      <Text style={styles.listCardDistance}>
-                        {formatDistance(m.distanceMeters)}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.listCardMetaRow}>
-                    {m.utilityType && (
-                      <Text
-                        style={[
-                          styles.listCardTag,
-                          {
-                            color:
-                              UtilityColors[m.utilityType] ?? Colors.primary,
-                          },
-                        ]}
-                      >
-                        {m.utilityType.toUpperCase()}
-                      </Text>
-                    )}
-                    <View
-                      style={[
-                        styles.statusDotTiny,
-                        { backgroundColor: getStatusColor(m.status) },
-                      ]}
-                    />
-                    <Text style={styles.listCardStatus}>{m.status}</Text>
-                    {m.lastInspectedAt && (
-                      <Text style={styles.listCardInspected}>
-                        · {formatRelativeDate(m.lastInspectedAt)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={Colors.border}
-                  style={{ alignSelf: "center", marginRight: 12 }}
-                />
-              </TouchableOpacity>
-            ))}
-
-          {controller.filteredList.length === 0 && !controller.isFetching && (
-            <View style={styles.emptyState}>
-              <Ionicons
-                name="search-outline"
-                size={36}
-                color={Colors.textMuted}
-              />
-              <Text style={styles.emptyTitle}>No Manholes Found</Text>
-              <Text style={styles.emptySubtitle}>
-                {controller.selectedUtility || controller.selectedStatus
-                  ? "Try adjusting your filters or increasing the search radius."
-                  : "Try increasing the search radius or moving to a different area."}
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </Animated.View>
     </View>
   );
 }
@@ -714,9 +548,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_MAX_HEIGHT,
-    // Force the sheet to slide off-screen by default, leaving EXACTLY the min-height tip exposed
-    transform: [{ translateY: SHEET_MAX_HEIGHT - SHEET_MIN_HEIGHT }],
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -875,5 +706,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
     fontWeight: "500",
+  },
+  selectedCardFloatingContainer: {
+    position: "absolute",
+    left: 14,
+    right: 14,
   },
 });
