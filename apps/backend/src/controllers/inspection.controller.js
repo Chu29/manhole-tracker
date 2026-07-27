@@ -1,14 +1,14 @@
-import { query, withTransaction } from "../db/pool.js";
+import { prisma } from "../db/prisma.js";
 import { HttpError } from "../middleware/error-handler.js";
 
-function toInspectionDTO(row) {
+function toInspectionDTO(log) {
   return {
-    id: row.id,
-    manholeId: row.manhole_id,
-    technicianId: row.technician_id,
-    notes: row.notes,
-    photoUrl: row.photo_url,
-    createdAt: row.created_at,
+    id: log.id,
+    manholeId: log.manholeId,
+    technicianId: log.technicianId,
+    notes: log.notes,
+    photoUrl: log.photoUrl,
+    createdAt: log.createdAt,
   };
 }
 
@@ -18,26 +18,31 @@ export async function createInspection(req, res) {
   const { notes, photoUrl } = req.body;
   const technicianId = req.technician.id;
 
-  const inspection = await withTransaction(async (client) => {
-    const manholeCheck = await client.query(
-      "SELECT id FROM manholes WHERE id = $1",
-      [manholeId],
-    );
-    if (!manholeCheck.rows[0]) throw new HttpError(404, "Manhole not found");
+  const inspection = await prisma.$transaction(async (tx) => {
+    const manhole = await tx.manhole.findUnique({
+      where: { id: manholeId },
+      select: { id: true },
+    });
+    if (!manhole) throw new HttpError(404, "Manhole not found");
 
-    const { rows } = await client.query(
-      `INSERT INTO inspection_logs (manhole_id, technician_id, notes, photo_url)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, manhole_id, technician_id, notes, photo_url, created_at`,
-      [manholeId, technicianId, notes || null, photoUrl || null],
-    );
+    const newLog = await tx.inspectionLog.create({
+      data: {
+        manholeId,
+        technicianId,
+        notes: notes || null,
+        photoUrl: photoUrl || null,
+      },
+    });
 
-    await client.query(
-      `UPDATE manholes SET last_inspected_at = now(), last_inspected_by = $1 WHERE id = $2`,
-      [technicianId, manholeId],
-    );
+    await tx.manhole.update({
+      where: { id: manholeId },
+      data: {
+        lastInspectedAt: new Date(),
+        lastInspectedBy: technicianId,
+      },
+    });
 
-    return rows[0];
+    return newLog;
   });
 
   res.status(201).json(toInspectionDTO(inspection));
@@ -45,43 +50,41 @@ export async function createInspection(req, res) {
 
 // GET /manholes/:id/inspections
 export async function listInspections(req, res) {
-  const { rows } = await query(
-    `SELECT id, manhole_id, technician_id, notes, photo_url, created_at
-     FROM inspection_logs WHERE manhole_id = $1
-     ORDER BY created_at DESC`,
-    [req.params.id],
-  );
+  const logs = await prisma.inspectionLog.findMany({
+    where: { manholeId: req.params.id },
+    orderBy: { createdAt: "desc" },
+  });
 
-  res.json(rows.map(toInspectionDTO));
+  res.json(logs.map(toInspectionDTO));
 }
 
 // GET /manholes/:id/inspections/:inspectionId
 export async function getInspection(req, res) {
-  const { rows } = await query(
-    `SELECT id, manhole_id, technician_id, notes, photo_url, created_at
-     FROM inspection_logs WHERE id = $1`,
-    [req.params.inspectionId],
-  );
+  const log = await prisma.inspectionLog.findUnique({
+    where: { id: req.params.inspectionId },
+  });
 
-  if (!rows[0]) throw new HttpError(404, "Inspection not found");
-  res.json(toInspectionDTO(rows[0]));
+  if (!log) throw new HttpError(404, "Inspection not found");
+  res.json(toInspectionDTO(log));
 }
 
 // DELETE /manholes/:id/inspections/:inspectionId
 export async function deleteInspection(req, res) {
-  await query("DELETE FROM inspection_logs WHERE id = $1", [
-    req.params.inspectionId,
-  ]);
+  await prisma.inspectionLog.delete({
+    where: { id: req.params.inspectionId },
+  });
   res.sendStatus(204);
 }
 
 // PATCH /manholes/:id/inspections/:inspectionId   { notes, photoUrl }
 export async function updateInspection(req, res) {
   const { notes, photoUrl } = req.body;
-  await query(
-    `UPDATE inspection_logs SET notes = $1, photo_url = $2
-     WHERE id = $3`,
-    [notes || null, photoUrl || null, req.params.inspectionId],
-  );
+  await prisma.inspectionLog.update({
+    where: { id: req.params.inspectionId },
+    data: {
+      notes: notes || null,
+      photoUrl: photoUrl || null,
+    },
+  });
   res.sendStatus(204);
 }
