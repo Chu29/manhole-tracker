@@ -17,11 +17,19 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const token = await login(email, password);
+      const { token, technician } = await login(email, password);
+      if (technician?.role !== "admin") {
+        setError("Access denied. Admin privileges required.");
+        return;
+      }
       setToken(token);
       router.push("/manholes");
-    } catch {
-      setError("Couldn't sign in. Check your email and password.");
+    } catch (err: any) {
+      if (err?.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Couldn't sign in. Check your email and password.");
+      }
     } finally {
       setSubmitting(false);
     }

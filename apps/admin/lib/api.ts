@@ -31,12 +31,21 @@ api.interceptors.response.use(
   },
 );
 
+export interface Technician {
+  id: string;
+  name: string;
+  email: string;
+  orgId?: string | null;
+  role?: string | null;
+  createdAt?: string | null;
+}
+
 export async function login(email: string, password: string) {
-  const { data } = await api.post<{ token: string }>("/auth/login", {
+  const { data } = await api.post<{ token: string; technician: Technician }>("/auth/login", {
     email,
     password,
   });
-  return data.token;
+  return data;
 }
 
 export async function listManholes() {
@@ -46,6 +55,11 @@ export async function listManholes() {
 
 export async function getManhole(id: string) {
   const { data } = await api.get<Manhole>(`/manholes/${id}`);
+  return data;
+}
+
+export async function createManhole(input: ManholeInput) {
+  const { data } = await api.post<Manhole>("/manholes", input);
   return data;
 }
 

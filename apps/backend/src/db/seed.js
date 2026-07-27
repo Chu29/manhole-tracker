@@ -1,29 +1,33 @@
+import bcrypt from "bcrypt";
 import { prisma } from "./prisma.js";
 
 async function seed() {
   console.log("Seeding database from original seed.sql via Prisma...");
 
+  const ADMIN_PASSWORD_HASH = bcrypt.hashSync("admin123", 10);
+  const TECH_PASSWORD_HASH = bcrypt.hashSync("tech123", 10);
+
   // 1. Insert Base Technicians
   const admin = await prisma.technician.upsert({
     where: { email: "jp.manga@manholetracker.cm" },
-    update: {},
+    update: { passwordHash: ADMIN_PASSWORD_HASH, role: "admin" },
     create: {
       id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
       name: "Jean-Pierre Manga",
       email: "jp.manga@manholetracker.cm",
-      passwordHash: "$2b$10$xyzHASH123SecurePasswordStuffHere",
+      passwordHash: ADMIN_PASSWORD_HASH,
       role: "admin",
     },
   });
 
   const tech = await prisma.technician.upsert({
     where: { email: "a.bello@manholetracker.cm" },
-    update: {},
+    update: { passwordHash: TECH_PASSWORD_HASH, role: "technician" },
     create: {
       id: "b2c3d4e5-f67a-8b9c-0d1e-2f3a4b5c6d7e",
       name: "Amadou Bello",
       email: "a.bello@manholetracker.cm",
-      passwordHash: "$2b$10$abcHASH456AnotherSecureHashString",
+      passwordHash: TECH_PASSWORD_HASH,
       role: "technician",
     },
   });
