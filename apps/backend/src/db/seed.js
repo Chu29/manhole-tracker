@@ -71,27 +71,27 @@ async function seed() {
     { code: "YDE-BYA-TEL-052", lng: 11.4940, lat: 3.8440, utilityType: "telecom", depthMeters: 1.5, status: "active", installDate: "2020-05-20", lastInspectedAt: "2025-11-25T14:20:00.000Z", lastInspectedBy: admin.id },
     { code: "YDE-BYA-ELE-053", lng: 11.4960, lat: 3.8460, utilityType: "electrical", depthMeters: 1.2, status: "active", installDate: "2023-02-10", lastInspectedAt: "2026-03-08T11:15:00.000Z", lastInspectedBy: tech.id },
 
-    // ACCACI (ESCHOSYS Campus Focus: RFRR+V5W -> 3.8536 N, 11.5034 E)
-    { code: "YDE-ACC-ESC-TEL-060", lng: 11.5030, lat: 3.8531, utilityType: "telecom", depthMeters: 1.2, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-03-01T08:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-ACC-ESC-TEL-061", lng: 11.5034, lat: 3.8536, utilityType: "telecom", depthMeters: 1.4, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-03-01T09:30:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-ACC-ESC-SEW-062", lng: 11.5037, lat: 3.8538, utilityType: "sewer", depthMeters: 2.6, status: "active", installDate: "2022-01-15", lastInspectedAt: "2026-02-14T11:00:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-ACC-ESC-WAT-063", lng: 11.5031, lat: 3.8541, utilityType: "water", depthMeters: 1.8, status: "active", installDate: "2022-01-15", lastInspectedAt: "2026-01-10T14:20:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-ACC-ESC-ELE-064", lng: 11.5041, lat: 3.8534, utilityType: "electrical", depthMeters: 1.5, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-02-25T10:15:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-ACC-ESC-ELE-065", lng: 11.5044, lat: 3.8544, utilityType: "electrical", depthMeters: 1.3, status: "damaged", installDate: "2023-09-01", lastInspectedAt: "2026-03-10T16:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-ACC-WAT-070", lng: 11.5015, lat: 3.8520, utilityType: "water", depthMeters: 2.0, status: "active", installDate: "2021-04-10", lastInspectedAt: "2026-01-20T10:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-ACC-SEW-071", lng: 11.5050, lat: 3.8560, utilityType: "sewer", depthMeters: 2.8, status: "active", installDate: "2020-08-25", lastInspectedAt: "2026-02-05T09:30:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-ACC-TEL-072", lng: 11.5065, lat: 3.8575, utilityType: "telecom", depthMeters: 1.5, status: "buried", installDate: "2021-11-12", lastInspectedAt: null, lastInspectedBy: null },
+    // ACCACI (ESCHOSYS Campus Focus: 3.842187 N, 11.490438 E)
+    { code: "YDE-ACC-ESC-TEL-060", lng: 11.490038, lat: 3.841687, utilityType: "telecom", depthMeters: 1.2, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-03-01T08:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-ACC-ESC-TEL-061", lng: 11.490438, lat: 3.842187, utilityType: "telecom", depthMeters: 1.4, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-03-01T09:30:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-ACC-ESC-SEW-062", lng: 11.490738, lat: 3.842387, utilityType: "sewer", depthMeters: 2.6, status: "active", installDate: "2022-01-15", lastInspectedAt: "2026-02-14T11:00:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-ACC-ESC-WAT-063", lng: 11.490138, lat: 3.842687, utilityType: "water", depthMeters: 1.8, status: "active", installDate: "2022-01-15", lastInspectedAt: "2026-01-10T14:20:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-ACC-ESC-ELE-064", lng: 11.491138, lat: 3.841987, utilityType: "electrical", depthMeters: 1.5, status: "active", installDate: "2023-09-01", lastInspectedAt: "2026-02-25T10:15:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-ACC-ESC-ELE-065", lng: 11.491438, lat: 3.842987, utilityType: "electrical", depthMeters: 1.3, status: "damaged", installDate: "2023-09-01", lastInspectedAt: "2026-03-10T16:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-ACC-WAT-070", lng: 11.488500, lat: 3.840000, utilityType: "water", depthMeters: 2.0, status: "active", installDate: "2021-04-10", lastInspectedAt: "2026-01-20T10:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-ACC-SEW-071", lng: 11.492000, lat: 3.844000, utilityType: "sewer", depthMeters: 2.8, status: "active", installDate: "2020-08-25", lastInspectedAt: "2026-02-05T09:30:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-ACC-TEL-072", lng: 11.493500, lat: 3.845500, utilityType: "telecom", depthMeters: 1.5, status: "buried", installDate: "2021-11-12", lastInspectedAt: null, lastInspectedBy: null },
 
-    // OBOBOGO (Rebase Code Camp Focus: RGF3+FC -> 3.8236 N, 11.4883 E)
-    { code: "YDE-OBB-RCC-TEL-080", lng: 11.4878, lat: 3.8231, utilityType: "telecom", depthMeters: 1.3, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T09:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-OBB-RCC-ELE-081", lng: 11.4883, lat: 3.8236, utilityType: "electrical", depthMeters: 1.5, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T10:15:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-OBB-RCC-SEW-082", lng: 11.4886, lat: 3.8238, utilityType: "sewer", depthMeters: 2.4, status: "active", installDate: "2023-11-05", lastInspectedAt: "2026-02-18T14:30:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-OBB-RCC-WAT-083", lng: 11.4880, lat: 3.8241, utilityType: "water", depthMeters: 1.7, status: "active", installDate: "2023-11-05", lastInspectedAt: "2026-01-25T11:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-OBB-RCC-TEL-084", lng: 11.4890, lat: 3.8234, utilityType: "telecom", depthMeters: 1.2, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T11:30:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-OBB-RCC-ELE-085", lng: 11.4893, lat: 3.8244, utilityType: "electrical", depthMeters: 1.4, status: "damaged", installDate: "2024-01-10", lastInspectedAt: "2026-03-14T15:00:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-OBB-WAT-090", lng: 11.4860, lat: 3.8215, utilityType: "water", depthMeters: 2.1, status: "active", installDate: "2020-05-18", lastInspectedAt: "2026-02-01T08:30:00.000Z", lastInspectedBy: tech.id },
-    { code: "YDE-OBB-SEW-091", lng: 11.4905, lat: 3.8260, utilityType: "sewer", depthMeters: 2.7, status: "active", installDate: "2019-09-12", lastInspectedAt: "2026-01-15T13:00:00.000Z", lastInspectedBy: admin.id },
-    { code: "YDE-OBB-TEL-092", lng: 11.4915, lat: 3.8275, utilityType: "telecom", depthMeters: 1.6, status: "buried", installDate: "2021-03-30", lastInspectedAt: null, lastInspectedBy: null },
+    // OBOBOGO (Rebase Code Camp Focus: 3.823688 N, 11.503563 E)
+    { code: "YDE-OBB-RCC-TEL-080", lng: 11.503063, lat: 3.823188, utilityType: "telecom", depthMeters: 1.3, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T09:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-OBB-RCC-ELE-081", lng: 11.503563, lat: 3.823688, utilityType: "electrical", depthMeters: 1.5, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T10:15:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-OBB-RCC-SEW-082", lng: 11.503863, lat: 3.823888, utilityType: "sewer", depthMeters: 2.4, status: "active", installDate: "2023-11-05", lastInspectedAt: "2026-02-18T14:30:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-OBB-RCC-WAT-083", lng: 11.503263, lat: 3.824188, utilityType: "water", depthMeters: 1.7, status: "active", installDate: "2023-11-05", lastInspectedAt: "2026-01-25T11:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-OBB-RCC-TEL-084", lng: 11.504263, lat: 3.823488, utilityType: "telecom", depthMeters: 1.2, status: "active", installDate: "2024-01-10", lastInspectedAt: "2026-03-12T11:30:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-OBB-RCC-ELE-085", lng: 11.504563, lat: 3.824488, utilityType: "electrical", depthMeters: 1.4, status: "damaged", installDate: "2024-01-10", lastInspectedAt: "2026-03-14T15:00:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-OBB-WAT-090", lng: 11.501500, lat: 3.821500, utilityType: "water", depthMeters: 2.1, status: "active", installDate: "2020-05-18", lastInspectedAt: "2026-02-01T08:30:00.000Z", lastInspectedBy: tech.id },
+    { code: "YDE-OBB-SEW-091", lng: 11.505500, lat: 3.826000, utilityType: "sewer", depthMeters: 2.7, status: "active", installDate: "2019-09-12", lastInspectedAt: "2026-01-15T13:00:00.000Z", lastInspectedBy: admin.id },
+    { code: "YDE-OBB-TEL-092", lng: 11.506500, lat: 3.827500, utilityType: "telecom", depthMeters: 1.6, status: "buried", installDate: "2021-03-30", lastInspectedAt: null, lastInspectedBy: null },
   ];
 
   for (const mh of seedManholes) {
