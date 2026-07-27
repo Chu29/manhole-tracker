@@ -11,8 +11,8 @@
   "scripts": {
     "build": "prisma generate",
     "dev": "nodemon src/index.js",
-    "start": "pnpm run dev",
-    "migrate": "pnpm run migrate",
+    "start": "node src/index.js",
+    "migrate": "prisma db push",
     "seed": "node src/db/seed.js"
   },
   "license": "ISC",

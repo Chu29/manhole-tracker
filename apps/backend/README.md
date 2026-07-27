@@ -38,9 +38,8 @@ comments in `src/routes/uploads.routes.js`).
 src/
 ├── index.js                 # app entry, route mounting, error handler
 ├── db/
-│   ├── pool.js               # pg Pool + query()/withTransaction() helpers
-│   ├── schema.sql             # spec §4 schema (idempotent, IF NOT EXISTS)
-│   └── migrate.js            # runs schema.sql against DATABASE_URL
+│   ├── prisma.js             # PrismaClient instance with pg adapter
+│   └── seed.js               # seeds technicians & manhole geospatial data
 ├── middleware/
 │   ├── auth.js                # requireAuth — verifies JWT, sets req.technician
 │   ├── async-handler.js       # wraps async route handlers
