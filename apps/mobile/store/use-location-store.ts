@@ -13,6 +13,15 @@ interface Coords {
   lng: number;
 }
 
+// Reject fixes worse than this radius (meters). expo-location reports
+// coords.accuracy as the 68% confidence radius, so anything above ~25m
+// near buildings/underground infra is usually noise, not real movement.
+const MAX_ACCEPTABLE_ACCURACY_METERS = 25;
+
+// Exponential smoothing factor applied to accepted fixes. Lower = smoother
+// but slower to react to real movement; higher = more responsive but jitterier.
+const SMOOTHING_ALPHA = 0.25;
+
 interface LocationState {
   currentLocation: Coords | null;
   permissionGranted: boolean | null; // null = not yet asked
@@ -52,10 +61,38 @@ export const useLocationStore = create<LocationState>((set, get) => ({
         distanceInterval: LOCAL_RESORT_INTERVAL_METERS,
       },
       async (location) => {
-        const coords: Coords = {
+        // Gate 1: drop fixes that are too imprecise to trust. This is the
+        // single biggest source of jitter — a bad fix near a building or
+        // underground utility can be off by 50m+ and will yank the sort
+        // order around even though the tech hasn't actually moved.
+        if (
+          location.coords.accuracy != null &&
+          location.coords.accuracy > MAX_ACCEPTABLE_ACCURACY_METERS
+        ) {
+          return;
+        }
+
+        const rawCoords: Coords = {
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         };
+
+        // Gate 2: smooth accepted fixes with exponential smoothing rather
+        // than snapping straight to the new point. This absorbs the
+        // remaining wobble between "good enough" fixes without introducing
+        // noticeable lag when the tech is actually walking.
+        const previous = get().currentLocation;
+        const coords: Coords = previous
+          ? {
+              lat:
+                previous.lat +
+                SMOOTHING_ALPHA * (rawCoords.lat - previous.lat),
+              lng:
+                previous.lng +
+                SMOOTHING_ALPHA * (rawCoords.lng - previous.lng),
+            }
+          : rawCoords;
+
         set({ currentLocation: coords });
 
         const manholeStore = useManholeStore.getState();

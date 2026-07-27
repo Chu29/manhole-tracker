@@ -1,7 +1,6 @@
 // hooks/useRegisterController.ts
 import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
-import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import NetInfo from "@react-native-community/netinfo";
 import { useManholeStore } from "../store/use-manhole-store";
@@ -16,7 +15,8 @@ function getTodayString(): string {
 
 export function useRegisterController() {
   const { addOrUpdateManhole } = useManholeStore();
-  const { currentLocation, startWatching } = useLocationStore();
+  const { currentLocation, permissionGranted, startWatching } =
+    useLocationStore();
 
   const [code, setCode] = useState("");
   const [utilityType, setUtilityType] = useState<
@@ -25,47 +25,16 @@ export function useRegisterController() {
   const [depthMeters, setDepthMeters] = useState("");
   const [installDate, setInstallDate] = useState(getTodayString());
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [capturedLocation, setCapturedLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
 
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  // "saving": writing the record, using whatever coordinate the map's
+  // live location indicator is currently showing.
+  const [submitStage, setSubmitStage] = useState<"idle" | "saving">("idle");
+  const submitting = submitStage !== "idle";
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     startWatching();
   }, [startWatching]);
-
-  useEffect(() => {
-    if (currentLocation && !capturedLocation) {
-      setCapturedLocation(currentLocation);
-    }
-  }, [currentLocation, capturedLocation]);
-
-  const captureGps = useCallback(async () => {
-    setGpsLoading(true);
-    setError(null);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission denied", "Location permission is required.");
-        return;
-      }
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setCapturedLocation({
-        lat: loc.coords.latitude,
-        lng: loc.coords.longitude,
-      });
-    } catch {
-      Alert.alert("Error", "Failed to get GPS location. Try again.");
-    } finally {
-      setGpsLoading(false);
-    }
-  }, []);
 
   const handlePickImage = useCallback(async () => {
     setError(null);
@@ -123,16 +92,11 @@ export function useRegisterController() {
     setDepthMeters("");
     setPhotoUri(null);
     setInstallDate(getTodayString());
-    setCapturedLocation(null);
   }, []);
 
   const handleSubmit = useCallback(async () => {
     setError(null);
 
-    if (!capturedLocation) {
-      setError("Capture a GPS location first.");
-      return;
-    }
     if (depthMeters && isNaN(Number(depthMeters))) {
       setError("Depth must be a valid number.");
       return;
@@ -141,17 +105,31 @@ export function useRegisterController() {
       setError("Installation date must be in YYYY-MM-DD format.");
       return;
     }
+    if (permissionGranted === false) {
+      Alert.alert("Permission denied", "Location permission is required.");
+      return;
+    }
+    if (!currentLocation) {
+      Alert.alert(
+        "Waiting for GPS",
+        "Still acquiring your location. Move to open ground and try again in a moment.",
+      );
+      return;
+    }
 
+    // Use exactly the same coordinate the map's live location dot is
+    // showing right now — what the technician sees is what gets saved,
+    // so the registered marker can never disagree with the dot.
     const payload = {
-      lat: capturedLocation.lat,
-      lng: capturedLocation.lng,
+      lat: currentLocation.lat,
+      lng: currentLocation.lng,
       code: code.trim() || undefined,
       utilityType: (utilityType || undefined) as any,
       depthMeters: depthMeters ? Number(depthMeters) : undefined,
       installDate: installDate.trim() || undefined,
     };
 
-    setSubmitting(true);
+    setSubmitStage("saving");
     try {
       const net = await NetInfo.fetch();
       if (net.isConnected) {
@@ -184,10 +162,11 @@ export function useRegisterController() {
     } catch (err: any) {
       setError(err.response?.data?.error ?? "Registration failed.");
     } finally {
-      setSubmitting(false);
+      setSubmitStage("idle");
     }
   }, [
-    capturedLocation,
+    currentLocation,
+    permissionGranted,
     code,
     utilityType,
     depthMeters,
@@ -208,11 +187,13 @@ export function useRegisterController() {
     setInstallDate,
     photoUri,
     setPhotoUri,
-    capturedLocation,
-    gpsLoading,
+    // This is now the authoritative coordinate — whatever is saved on
+    // submit is exactly what's displayed here, matching the map's dot.
+    liveLocation: currentLocation,
+    permissionGranted,
+    submitStage,
     submitting,
     error,
-    captureGps,
     handlePickImage,
     handleTakePhoto,
     handleSubmit,

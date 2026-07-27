@@ -29,11 +29,11 @@ export default function RegisterScreen() {
     setInstallDate,
     photoUri,
     setPhotoUri,
-    capturedLocation,
-    gpsLoading,
+    liveLocation,
+    permissionGranted,
+    submitStage,
     submitting,
     error,
-    captureGps,
     handlePickImage,
     handleTakePhoto,
     handleSubmit,
@@ -77,70 +77,31 @@ export default function RegisterScreen() {
               style={styles.rowIcon}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>GPS Coordinates</Text>
-              {capturedLocation ? (
+              <Text style={styles.infoLabel}>Current Position</Text>
+              {liveLocation ? (
                 <Text style={[styles.infoValue, styles.monospace]}>
-                  {capturedLocation.lat.toFixed(6)},{" "}
-                  {capturedLocation.lng.toFixed(6)}
+                  {liveLocation.lat.toFixed(6)}, {liveLocation.lng.toFixed(6)}
+                </Text>
+              ) : permissionGranted === false ? (
+                <Text style={[styles.infoValue, styles.errorTextInline]}>
+                  Location permission required
                 </Text>
               ) : (
                 <Text style={[styles.infoValue, styles.errorTextInline]}>
-                  No location captured yet
+                  Acquiring GPS…
                 </Text>
               )}
             </View>
-            {capturedLocation && (
+            {liveLocation && (
               <View style={styles.statusBadgeSuccess}>
-                <Text style={styles.statusBadgeTextSuccess}>LOCKED</Text>
+                <Text style={styles.statusBadgeTextSuccess}>LIVE</Text>
               </View>
             )}
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                gpsLoading && styles.disabled,
-                capturedLocation
-                  ? styles.actionButtonSecondary
-                  : styles.actionButtonPrimary,
-              ]}
-              onPress={captureGps}
-              disabled={gpsLoading}
-            >
-              {gpsLoading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={capturedLocation ? Colors.primary : "#fff"}
-                />
-              ) : (
-                <>
-                  <Ionicons
-                    name={
-                      capturedLocation ? "refresh-outline" : "locate-outline"
-                    }
-                    size={18}
-                    color={capturedLocation ? Colors.primary : "#fff"}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={[
-                      styles.actionButtonText,
-                      capturedLocation
-                        ? styles.actionButtonTextSecondary
-                        : styles.actionButtonTextPrimary,
-                    ]}
-                  >
-                    {capturedLocation
-                      ? "Re-capture GPS"
-                      : "Capture GPS Location"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.helperText}>
+            This is the exact position that will be saved — the same one
+            shown by the location dot on the map.
+          </Text>
         </View>
 
         {/* Manhole Metadata Card */}
@@ -396,8 +357,11 @@ export default function RegisterScreen() {
           onPress={handleSubmit}
           disabled={submitting}
         >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
+          {submitStage === "saving" ? (
+            <>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.submitText}>Saving…</Text>
+            </>
           ) : (
             <>
               <Ionicons
@@ -481,6 +445,12 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   divider: { height: 1, backgroundColor: Colors.border, marginVertical: 4 },
+  helperText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 8,
+    lineHeight: 16,
+  },
   errorTextInline: { color: Colors.danger, fontStyle: "italic", fontSize: 14 },
   statusBadgeSuccess: {
     backgroundColor: Colors.successLight,
