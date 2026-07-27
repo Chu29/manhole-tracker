@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { query } from "../db/pool.js";
+import { prisma } from "../db/prisma.js";
 import { HttpError } from "../middleware/error-handler.js";
 
 const SALT_ROUNDS = 12;
@@ -13,14 +13,14 @@ function signToken(technician) {
   );
 }
 
-function toPublicTechnician(row) {
+function toPublicTechnician(tech) {
   return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    orgId: row.org_id,
-    role: row.role,
-    createdAt: row.created_at,
+    id: tech.id,
+    name: tech.name,
+    email: tech.email,
+    orgId: tech.orgId,
+    role: tech.role,
+    createdAt: tech.createdAt,
   };
 }
 
@@ -37,14 +37,16 @@ export async function register(req, res) {
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const { rows } = await query(
-    `INSERT INTO technicians (name, email, password_hash, org_id)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, name, email, org_id, role, created_at`,
-    [name, email.toLowerCase().trim(), passwordHash, orgId || null],
-  );
+  const newTech = await prisma.technician.create({
+    data: {
+      name,
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      orgId: orgId || null,
+    },
+  });
 
-  const technician = toPublicTechnician(rows[0]);
+  const technician = toPublicTechnician(newTech);
   const token = signToken(technician);
 
   res.status(201).json({ token, technician });
@@ -58,23 +60,20 @@ export async function login(req, res) {
     throw new HttpError(400, "email and password are required");
   }
 
-  const { rows } = await query(
-    `SELECT id, name, email, password_hash, org_id, role, created_at
-     FROM technicians WHERE email = $1`,
-    [email.toLowerCase().trim()],
-  );
+  const tech = await prisma.technician.findUnique({
+    where: { email: email.toLowerCase().trim() },
+  });
 
-  const row = rows[0];
-  const passwordMatches = row
-    ? await bcrypt.compare(password, row.password_hash)
+  const passwordMatches = tech
+    ? await bcrypt.compare(password, tech.passwordHash)
     : false;
 
-  if (!row || !passwordMatches) {
+  if (!tech || !passwordMatches) {
     // Same message for both cases — don't reveal whether the email exists.
     throw new HttpError(401, "Invalid email or password");
   }
 
-  const technician = toPublicTechnician(row);
+  const technician = toPublicTechnician(tech);
   const token = signToken(technician);
 
   res.json({ token, technician });
@@ -93,15 +92,13 @@ export function refresh(req, res) {
 
 // GET /auth/me
 export async function me(req, res) {
-  const { rows } = await query(
-    `SELECT id, name, email, org_id, role, created_at
-     FROM technicians WHERE id = $1`,
-    [req.technician.id],
-  );
+  const tech = await prisma.technician.findUnique({
+    where: { id: req.technician.id },
+  });
 
-  if (!rows[0]) {
+  if (!tech) {
     throw new HttpError(404, "Technician not found");
   }
 
-  res.json(toPublicTechnician(rows[0]));
+  res.json(toPublicTechnician(tech));
 }

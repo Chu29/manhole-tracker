@@ -1,0 +1,58 @@
+// Prisma 7 schema configuration
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis, pgcrypto]
+}
+
+model Technician {
+  id           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  email        String          @unique
+  passwordHash String          @map("password_hash")
+  orgId        String?         @map("org_id") @db.Uuid
+  role         String?         @default("technician")
+  createdAt    DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  manholesInspected Manhole[]        @relation("LastInspectedBy")
+  inspectionLogs    InspectionLog[]
+
+  @@map("technicians")
+}
+
+model Manhole {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String?                 @unique
+  location        Unsupported("geography(POINT, 4326)")
+  utilityType     String?                 @map("utility_type")
+  depthMeters     Decimal?                @map("depth_meters") @db.Decimal
+  status          String?                 @default("active")
+  photoUrl        String?                 @map("photo_url")
+  installDate     DateTime?               @map("install_date") @db.Date
+  lastInspectedAt DateTime?               @map("last_inspected_at") @db.Timestamptz(6)
+  lastInspectedBy String?                 @map("last_inspected_by") @db.Uuid
+  createdAt       DateTime?               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  inspector       Technician?             @relation("LastInspectedBy", fields: [lastInspectedBy], references: [id])
+  inspectionLogs  InspectionLog[]
+
+  @@map("manholes")
+}
+
+model InspectionLog {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  manholeId    String?    @map("manhole_id") @db.Uuid
+  technicianId String?    @map("technician_id") @db.Uuid
+  notes        String?
+  photoUrl     String?    @map("photo_url")
+  createdAt    DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  manhole      Manhole?   @relation(fields: [manholeId], references: [id], onDelete: Cascade)
+  technician   Technician? @relation(fields: [technicianId], references: [id])
+
+  @@map("inspection_logs")
+}
