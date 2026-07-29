@@ -48,6 +48,11 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+export async function getMe() {
+  const { data } = await api.get<Technician>("/auth/me");
+  return data;
+}
+
 export async function listManholes() {
   const { data } = await api.get<Manhole[]>("/manholes");
   return data;

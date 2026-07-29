@@ -1,14 +1,11 @@
-import { Sidebar } from "@/components/Sidebar";
-
 export default function ManholesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="flex-1 p-8">{children}</main>
+    <div className="relative h-screen w-screen overflow-hidden bg-ink-950">
+      {children}
     </div>
   );
 }
