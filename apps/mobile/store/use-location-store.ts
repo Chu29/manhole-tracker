@@ -18,9 +18,7 @@ interface Coords {
 // near buildings/underground infra is usually noise, not real movement.
 const MAX_ACCEPTABLE_ACCURACY_METERS = 25;
 
-// Exponential smoothing factor applied to accepted fixes. Lower = smoother
-// but slower to react to real movement; higher = more responsive but jitterier.
-const SMOOTHING_ALPHA = 0.25;
+
 
 interface LocationState {
   currentLocation: Coords | null;
@@ -77,22 +75,19 @@ export const useLocationStore = create<LocationState>((set, get) => ({
           lng: location.coords.longitude,
         };
 
-        // Gate 2: smooth accepted fixes with exponential smoothing rather
-        // than snapping straight to the new point. This absorbs the
-        // remaining wobble between "good enough" fixes without introducing
-        // noticeable lag when the tech is actually walking.
         const previous = get().currentLocation;
-        const coords: Coords = previous
-          ? {
-              lat:
-                previous.lat +
-                SMOOTHING_ALPHA * (rawCoords.lat - previous.lat),
-              lng:
-                previous.lng +
-                SMOOTHING_ALPHA * (rawCoords.lng - previous.lng),
-            }
-          : rawCoords;
 
+        // Gate 2: explicitly ignore updates that represent movement of less than
+        // LOCAL_RESORT_INTERVAL_METERS to prevent constant list re-sorting due to
+        // minor GPS drift.
+        if (previous) {
+          const dist = haversineDistance(previous, rawCoords);
+          if (dist < LOCAL_RESORT_INTERVAL_METERS) {
+            return;
+          }
+        }
+
+        const coords = rawCoords;
         set({ currentLocation: coords });
 
         const manholeStore = useManholeStore.getState();

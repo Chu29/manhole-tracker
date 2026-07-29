@@ -129,23 +129,11 @@ export default function MapScreen() {
         style={styles.map}
         initialRegion={initialRegion}
         showsMyLocationButton={false}
+        showsUserLocation={true}
         mapType={controller.mapType}
         provider={PROVIDER_GOOGLE}
       >
-        {controller.currentLocation && (
-          <Marker
-            coordinate={{
-              latitude: controller.currentLocation.lat,
-              longitude: controller.currentLocation.lng,
-            }}
-            anchor={{ x: 0.5, y: 0.5 }}
-            zIndex={999}
-          >
-            <View style={styles.userDotOuter}>
-              <View style={styles.userDotInner} />
-            </View>
-          </Marker>
-        )}
+
 
         {controller.currentLocation && (
           <Circle
@@ -563,22 +551,7 @@ const styles = StyleSheet.create({
   },
   fabPrimary: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
-  userDotOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "rgba(26,110,191,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  userDotInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
+
   sheet: {
     position: "absolute",
     bottom: 0,
