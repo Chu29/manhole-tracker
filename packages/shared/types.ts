@@ -29,6 +29,16 @@ export interface ManholeInput {
   installDate?: string;
 }
 
+export interface Technician {
+  id: string;
+  name: string;
+  email: string;
+  orgId?: string | null;
+  role?: string | null;
+  createdAt?: string | null;
+  inspectionCount?: number;
+}
+
 export interface Inspection {
   id: string;
   manholeId: string;
@@ -36,6 +46,13 @@ export interface Inspection {
   notes: string | null;
   photoUrl: string | null;
   createdAt: string;
+  technician?: Technician | null;
+  manhole?: {
+    id: string;
+    code: string | null;
+    utilityType: UtilityType | null;
+  } | null;
 }
 
 export * from "./constants.js";
+

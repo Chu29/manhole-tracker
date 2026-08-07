@@ -9,7 +9,42 @@ function toInspectionDTO(log) {
     notes: log.notes,
     photoUrl: log.photoUrl,
     createdAt: log.createdAt,
+    technician: log.technician ? {
+      id: log.technician.id,
+      name: log.technician.name,
+      email: log.technician.email,
+      role: log.technician.role,
+    } : null,
+    manhole: log.manhole ? {
+      id: log.manhole.id,
+      code: log.manhole.code,
+      utilityType: log.manhole.utilityType,
+      status: log.manhole.status,
+    } : null,
   };
+}
+
+// GET /inspections (global list across all manholes)
+export async function listAllInspections(req, res) {
+  const { technicianId, manholeId } = req.query;
+  const where = {};
+  if (technicianId) where.technicianId = String(technicianId);
+  if (manholeId) where.manholeId = String(manholeId);
+
+  const logs = await prisma.inspectionLog.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: {
+      technician: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+      manhole: {
+        select: { id: true, code: true, utilityType: true, status: true },
+      },
+    },
+  });
+
+  res.json(logs.map(toInspectionDTO));
 }
 
 // POST /manholes/:id/inspections   { notes, photoUrl }
@@ -32,6 +67,14 @@ export async function createInspection(req, res) {
         notes: notes || null,
         photoUrl: photoUrl || null,
       },
+      include: {
+        technician: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        manhole: {
+          select: { id: true, code: true, utilityType: true, status: true },
+        },
+      },
     });
 
     await tx.manhole.update({
@@ -53,10 +96,19 @@ export async function listInspections(req, res) {
   const logs = await prisma.inspectionLog.findMany({
     where: { manholeId: req.params.id },
     orderBy: { createdAt: "desc" },
+    include: {
+      technician: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+      manhole: {
+        select: { id: true, code: true, utilityType: true, status: true },
+      },
+    },
   });
 
   res.json(logs.map(toInspectionDTO));
 }
+
 
 // GET /manholes/:id/inspections/:inspectionId
 export async function getInspection(req, res) {

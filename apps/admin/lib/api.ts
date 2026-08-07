@@ -1,8 +1,12 @@
 import axios from "axios";
 import { getToken, clearToken } from "./auth";
 import { DEFAULT_API_BASE_URL } from "@manhole-tracker/shared";
-import type { Manhole, ManholeInput, ManholeStatus, UtilityType } from "@manhole-tracker/shared";
-export type { Manhole, ManholeInput, ManholeStatus, UtilityType };
+import type { Manhole, ManholeInput, ManholeStatus, UtilityType, Technician, Inspection } from "@manhole-tracker/shared";
+export type { Manhole, ManholeInput, ManholeStatus, UtilityType, Technician, Inspection };
+
+export interface TechnicianDetail extends Technician {
+  inspectionLogs?: Inspection[];
+}
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `${DEFAULT_API_BASE_URL}/api`;
 
@@ -30,15 +34,6 @@ api.interceptors.response.use(
     return Promise.reject(err);
   },
 );
-
-export interface Technician {
-  id: string;
-  name: string;
-  email: string;
-  orgId?: string | null;
-  role?: string | null;
-  createdAt?: string | null;
-}
 
 export async function login(email: string, password: string) {
   const { data } = await api.post<{ token: string; technician: Technician }>("/auth/login", {
@@ -76,3 +71,31 @@ export async function updateManhole(id: string, input: Partial<ManholeInput>) {
 export async function deleteManhole(id: string) {
   await api.delete(`/manholes/${id}`);
 }
+
+export async function listTechnicians() {
+  const { data } = await api.get<Technician[]>("/technicians");
+  return data;
+}
+
+export async function getTechnician(id: string) {
+  const { data } = await api.get<TechnicianDetail>(`/technicians/${id}`);
+  return data;
+}
+
+export async function updateTechnician(id: string, input: { role?: string; orgId?: string | null }) {
+  const { data } = await api.get<Technician>(`/technicians/${id}`);
+  const { data: updated } = await api.patch<Technician>(`/technicians/${id}`, input);
+  return updated;
+}
+
+
+export async function listAllInspections(params?: { technicianId?: string; manholeId?: string }) {
+  const { data } = await api.get<Inspection[]>("/inspections", { params });
+  return data;
+}
+
+export async function listManholeInspections(manholeId: string) {
+  const { data } = await api.get<Inspection[]>(`/manholes/${manholeId}/inspections`);
+  return data;
+}
+

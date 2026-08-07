@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { useRouter } from "next/navigation";
 import { Manhole, ManholeInput, ManholeStatus, UtilityType } from "@/lib/api";
 
@@ -153,6 +154,61 @@ export function ManholeForm({
           </button>
         )}
       </div>
+
+      {initial?.id && (
+        <InspectionHistorySection manholeId={initial.id} />
+      )}
     </form>
   );
 }
+
+function InspectionHistorySection({ manholeId }: { manholeId: string }) {
+  const [inspections, setInspections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import("@/lib/api").then(({ listManholeInspections }) => {
+      listManholeInspections(manholeId)
+        .then(setInspections)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    });
+  }, [manholeId]);
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+      <h4 className="text-xs font-bold text-mist uppercase tracking-wide flex items-center justify-between">
+        <span>📋 Inspection History</span>
+        <span className="text-[10px] text-haze">({inspections.length})</span>
+      </h4>
+
+      {loading ? (
+        <div className="h-16 rounded-xl bg-ink-900 animate-pulse" />
+      ) : inspections.length === 0 ? (
+        <p className="text-xs text-haze italic">No inspection logs recorded yet.</p>
+      ) : (
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+          {inspections.map((log) => (
+            <div
+              key={log.id}
+              className="p-2.5 rounded-xl bg-ink-950/80 border border-white/5 text-xs space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-survey">
+                  {log.technician?.name || "Technician"}
+                </span>
+                <span className="text-[10px] text-haze font-mono">
+                  {new Date(log.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-mist text-[11px]">
+                {log.notes || "No notes recorded"}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

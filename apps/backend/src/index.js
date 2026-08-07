@@ -1,8 +1,12 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ override: true });
+
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import manholeRoutes from "./routes/manholes.routes.js";
+import technicianRoutes from "./routes/technicians.routes.js";
+import inspectionRoutes from "./routes/inspections.routes.js";
 import uploadRoutes from "./routes/uploads.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
@@ -27,7 +31,10 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/manholes", manholeRoutes);
+app.use("/api/technicians", technicianRoutes);
+app.use("/api/inspections", inspectionRoutes);
 app.use("/api/uploads", uploadRoutes);
+
 
 // 404 for unmatched API routes
 app.use("/api", (req, res) => res.status(404).json({ error: "Not found" }));
@@ -41,3 +48,4 @@ app.listen(PORT,'0.0.0.0', () => {
 });
 
 export default app;
+

@@ -195,6 +195,20 @@ export function FloatingSidebar({
 
       {/* 4. Bottom Action Area */}
       <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-white/10">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => router.push("/technicians")}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-ink-800/80 px-3 py-2 text-xs font-semibold text-mist hover:border-survey/40 hover:bg-ink-700 transition-all"
+          >
+            <span>👷</span> Technicians
+          </button>
+          <button
+            onClick={() => router.push("/inspections")}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-ink-800/80 px-3 py-2 text-xs font-semibold text-mist hover:border-survey/40 hover:bg-ink-700 transition-all"
+          >
+            <span>📋</span> Inspection Logs
+          </button>
+        </div>
         <button
           onClick={handleLogout}
           className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-500/20"
@@ -203,5 +217,6 @@ export function FloatingSidebar({
         </button>
       </div>
     </aside>
+
   );
 }

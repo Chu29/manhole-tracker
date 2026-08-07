@@ -30,14 +30,35 @@ export function Sidebar() {
           <Link
             href="/manholes"
             className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
-              isActive("/manholes") && pathname === "/manholes"
+              isActive("/manholes")
                 ? "bg-ink-800 text-mist"
                 : "text-haze hover:bg-ink-800 hover:text-mist"
             }`}
           >
-            Manholes
+            🗺️ Manholes & Map
+          </Link>
+          <Link
+            href="/technicians"
+            className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
+              isActive("/technicians")
+                ? "bg-ink-800 text-mist"
+                : "text-haze hover:bg-ink-800 hover:text-mist"
+            }`}
+          >
+            👷 Technicians
+          </Link>
+          <Link
+            href="/inspections"
+            className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
+              isActive("/inspections")
+                ? "bg-ink-800 text-mist"
+                : "text-haze hover:bg-ink-800 hover:text-mist"
+            }`}
+          >
+            📋 Inspection Logs
           </Link>
         </nav>
+
       </div>
       <button
         onClick={handleLogout}
