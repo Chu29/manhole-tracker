@@ -47,11 +47,28 @@ export async function listAllInspections(req, res) {
   res.json(logs.map(toInspectionDTO));
 }
 
-// POST /manholes/:id/inspections   { notes, photoUrl }
+// POST /manholes/:id/inspections   { id?, notes, photoUrl }
 export async function createInspection(req, res) {
   const { id: manholeId } = req.params;
-  const { notes, photoUrl } = req.body;
+  const { id, notes, photoUrl } = req.body;
   const technicianId = req.technician.id;
+
+  if (id) {
+    const existing = await prisma.inspectionLog.findUnique({
+      where: { id },
+      include: {
+        technician: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+        manhole: {
+          select: { id: true, code: true, utilityType: true, status: true },
+        },
+      },
+    });
+    if (existing) {
+      return res.status(200).json(toInspectionDTO(existing));
+    }
+  }
 
   const inspection = await prisma.$transaction(async (tx) => {
     const manhole = await tx.manhole.findUnique({
@@ -62,6 +79,7 @@ export async function createInspection(req, res) {
 
     const newLog = await tx.inspectionLog.create({
       data: {
+        ...(id ? { id } : {}),
         manholeId,
         technicianId,
         notes: notes || null,

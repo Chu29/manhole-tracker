@@ -29,7 +29,7 @@ import { useLocationStore } from "../../store/use-location-store";
 import { useManholeStore } from "../../store/use-manhole-store";
 import { Colors, UtilityColors } from "../../constants/theme";
 import { OfflineBanner } from "../../components/offline-banner";
-import { enqueue } from "../../services/offline-queue";
+import { enqueue, subscribeQueueFlushed } from "../../services/offline-queue";
 import NetInfo from "@react-native-community/netinfo";
 import * as ImagePicker from "expo-image-picker";
 import { UTILITY_TYPES, MANHOLE_STATUSES } from "@manhole-tracker/shared";
@@ -100,6 +100,10 @@ export default function ManholeDetailScreen() {
 
   useEffect(() => {
     loadDetail();
+    const unsubscribe = subscribeQueueFlushed(() => {
+      loadDetail(false);
+    });
+    return unsubscribe;
   }, [id]);
 
   useEffect(() => {
@@ -112,8 +116,8 @@ export default function ManholeDetailScreen() {
     }
   }, [manhole]);
 
-  async function loadDetail() {
-    setLoading(true);
+  async function loadDetail(showLoading = true) {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const [m, logs] = await Promise.all([
@@ -123,9 +127,11 @@ export default function ManholeDetailScreen() {
       setManhole(m);
       setInspections(logs);
     } catch (err: any) {
-      setError(err.response?.data?.error ?? "Failed to load manhole details.");
+      if (showLoading) {
+        setError(err.response?.data?.error ?? "Failed to load manhole details.");
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
@@ -357,7 +363,7 @@ export default function ManholeDetailScreen() {
         setManhole(updatedManhole);
         addOrUpdateManhole(updatedManhole);
       } else {
-        await enqueue({
+        const clientUuid = await enqueue({
           type: "CREATE_INSPECTION",
           manholeId: id,
           payload: {
@@ -365,9 +371,29 @@ export default function ManholeDetailScreen() {
             photoUrl: inspectionPhotoUri || undefined,
           },
         });
+
+        const localInspection: Inspection = {
+          id: clientUuid,
+          manholeId: id,
+          technicianId: "offline-user",
+          notes: notes.trim(),
+          photoUrl: inspectionPhotoUri || null,
+          createdAt: new Date().toISOString(),
+        };
+
+        setInspections((prev) => [localInspection, ...prev]);
+
+        const updatedManhole = {
+          ...manhole!,
+          lastInspectedAt: localInspection.createdAt,
+          lastInspectedBy: "You (Offline)",
+        };
+        setManhole(updatedManhole);
+        addOrUpdateManhole(updatedManhole);
+
         Alert.alert(
           "Queued offline",
-          "Inspection will be synced when you reconnect.",
+          "Inspection saved locally and queued for background sync.",
         );
       }
       setNotes("");

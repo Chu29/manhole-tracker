@@ -81,10 +81,23 @@ function toManholeDTO(row) {
   };
 }
 
-// POST /manholes   { code, lat, lng, utilityType, depthMeters, photoUrl, installDate }
+// POST /manholes   { id?, code, lat, lng, utilityType, depthMeters, photoUrl, installDate }
 export async function createManhole(req, res) {
-  const { code, lat, lng, utilityType, depthMeters, photoUrl, installDate } =
+  const { id, code, lat, lng, utilityType, depthMeters, photoUrl, installDate } =
     req.body;
+
+  if (id) {
+    const existing = await prisma.$queryRaw`
+      SELECT id, code,
+        ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng,
+        utility_type, depth_meters, status, photo_url, install_date,
+        last_inspected_at, last_inspected_by, created_at
+      FROM manholes WHERE id = ${id}::uuid
+    `;
+    if (existing[0]) {
+      return res.status(200).json(toManholeDTO(existing[0]));
+    }
+  }
 
   if (lat === undefined || lng === undefined) {
     throw new HttpError(400, "lat and lng are required");
@@ -97,14 +110,23 @@ export async function createManhole(req, res) {
       : null;
   validateUtilityType(utilityType);
 
-  const rows = await prisma.$queryRaw`
-    INSERT INTO manholes (code, location, utility_type, depth_meters, photo_url, install_date)
-    VALUES (${code ?? null}, ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)::geography, ${utilityType ?? null}, ${parsedDepthMeters}, ${photoUrl ?? null}, ${installDate ? new Date(installDate) : null})
-    RETURNING id, code,
-      ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng,
-      utility_type, depth_meters, status, photo_url, install_date,
-      last_inspected_at, last_inspected_by, created_at
-  `;
+  const rows = id
+    ? await prisma.$queryRaw`
+        INSERT INTO manholes (id, code, location, utility_type, depth_meters, photo_url, install_date)
+        VALUES (${id}::uuid, ${code ?? null}, ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)::geography, ${utilityType ?? null}, ${parsedDepthMeters}, ${photoUrl ?? null}, ${installDate ? new Date(installDate) : null})
+        RETURNING id, code,
+          ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng,
+          utility_type, depth_meters, status, photo_url, install_date,
+          last_inspected_at, last_inspected_by, created_at
+      `
+    : await prisma.$queryRaw`
+        INSERT INTO manholes (code, location, utility_type, depth_meters, photo_url, install_date)
+        VALUES (${code ?? null}, ST_SetSRID(ST_MakePoint(${parsedLng}, ${parsedLat}), 4326)::geography, ${utilityType ?? null}, ${parsedDepthMeters}, ${photoUrl ?? null}, ${installDate ? new Date(installDate) : null})
+        RETURNING id, code,
+          ST_Y(location::geometry) AS lat, ST_X(location::geometry) AS lng,
+          utility_type, depth_meters, status, photo_url, install_date,
+          last_inspected_at, last_inspected_by, created_at
+      `;
 
   res.status(201).json(toManholeDTO(rows[0]));
 }

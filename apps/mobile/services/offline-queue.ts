@@ -36,20 +36,42 @@ export type QueuedOperation =
 
 export type QueuedOperationPayload =
   | {
+      id?: string;
       type: "CREATE_MANHOLE";
       payload: Parameters<typeof createManhole>[0];
     }
   | {
+      id?: string;
       type: "CREATE_INSPECTION";
       manholeId: string;
       payload: Parameters<typeof createInspection>[1];
     }
   | {
+      id?: string;
       type: "UPDATE_MANHOLE";
       manholeId: string;
       payload: Parameters<typeof updateManhole>[1];
     };
 
+type QueueListener = (flushedOps: QueuedOperation[]) => void;
+const flushListeners: Set<QueueListener> = new Set();
+
+export function subscribeQueueFlushed(listener: QueueListener): () => void {
+  flushListeners.add(listener);
+  return () => {
+    flushListeners.delete(listener);
+  };
+}
+
+function notifyFlushed(flushedOps: QueuedOperation[]) {
+  flushListeners.forEach((listener) => {
+    try {
+      listener(flushedOps);
+    } catch (err) {
+      console.error("Queue listener error:", err);
+    }
+  });
+}
 
 async function readQueue(): Promise<QueuedOperation[]> {
   return (await getJSON<QueuedOperation[]>(STORAGE_KEYS.OFFLINE_QUEUE)) ?? [];
@@ -59,77 +81,104 @@ async function writeQueue(queue: QueuedOperation[]): Promise<void> {
   await storeJSON(STORAGE_KEYS.OFFLINE_QUEUE, queue);
 }
 
-export async function enqueue(op: QueuedOperationPayload): Promise<void> {
+export async function enqueue(op: QueuedOperationPayload): Promise<string> {
   const queue = await readQueue();
-  queue.push({ ...op, id: uuidv4() } as QueuedOperation);
+  const id = op.id || uuidv4();
+  queue.push({ ...op, id } as QueuedOperation);
   await writeQueue(queue);
+  return id;
 }
 
 export async function getPendingCount(): Promise<number> {
   return (await readQueue()).length;
 }
 
+let isFlushing = false;
+
 /**
  * Attempt to flush all queued operations in order.
- * Stops on the first network failure and retains the un-sent remainder.
- * Call this in the NetInfo `isConnected` listener in the root layout.
+ * Uses an execution lock to prevent parallel flushes.
+ * Stops on network failure and retains un-sent remainder.
  */
 export async function flushQueue(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<void> {
-  let queue = await readQueue();
-  if (queue.length === 0) return;
+  if (isFlushing) return;
+  isFlushing = true;
 
-  const total = queue.length;
-  const remaining: QueuedOperation[] = [];
+  try {
+    let queue = await readQueue();
+    if (queue.length === 0) return;
 
-  for (let i = 0; i < queue.length; i++) {
-    const op = queue[i];
-    try {
-      if (op.type === "CREATE_MANHOLE") {
-        const payload = { ...op.payload };
-        if (
-          payload.photoUrl &&
-          !payload.photoUrl.startsWith("http://") &&
-          !payload.photoUrl.startsWith("https://")
-        ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
+    const total = queue.length;
+    const syncedOps: QueuedOperation[] = [];
+    let completedCount = 0;
+
+    while (queue.length > 0) {
+      const op = queue[0];
+      try {
+        if (op.type === "CREATE_MANHOLE") {
+          const payload = { ...op.payload };
+          if (
+            payload.photoUrl &&
+            !payload.photoUrl.startsWith("http://") &&
+            !payload.photoUrl.startsWith("https://")
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await createManhole({ ...payload, id: op.id });
+        } else if (op.type === "CREATE_INSPECTION") {
+          const payload = { ...op.payload };
+          if (
+            payload.photoUrl &&
+            !payload.photoUrl.startsWith("http://") &&
+            !payload.photoUrl.startsWith("https://")
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await createInspection(op.manholeId, { ...payload, id: op.id });
+        } else if (op.type === "UPDATE_MANHOLE") {
+          const payload = { ...op.payload };
+          if (
+            payload.photoUrl &&
+            !payload.photoUrl.startsWith("http://") &&
+            !payload.photoUrl.startsWith("https://")
+          ) {
+            const { photoUrl } = await uploadPhoto(payload.photoUrl);
+            payload.photoUrl = photoUrl;
+          }
+          await updateManhole(op.manholeId, payload);
         }
-        await createManhole(payload);
-      } else if (op.type === "CREATE_INSPECTION") {
-        const payload = { ...op.payload };
-        if (
-          payload.photoUrl &&
-          !payload.photoUrl.startsWith("http://") &&
-          !payload.photoUrl.startsWith("https://")
-        ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
+
+        syncedOps.push(op);
+        completedCount++;
+        // Remove item from queue immediately upon success
+        queue.shift();
+        await writeQueue(queue);
+        onProgress?.(completedCount, total);
+      } catch (err: any) {
+        const status = err.response?.status;
+        // Non-retryable 4xx client errors (except 429 rate limit or 408 timeout)
+        if (status && status >= 400 && status < 500 && status !== 429 && status !== 408) {
+          console.error("Discarding unrecoverable queued operation (4xx error):", op, err);
+          queue.shift();
+          await writeQueue(queue);
+          continue;
         }
-        await createInspection(op.manholeId, payload);
-      } else if (op.type === "UPDATE_MANHOLE") {
-        const payload = { ...op.payload };
-        if (
-          payload.photoUrl &&
-          !payload.photoUrl.startsWith("http://") &&
-          !payload.photoUrl.startsWith("https://")
-        ) {
-          const { photoUrl } = await uploadPhoto(payload.photoUrl);
-          payload.photoUrl = photoUrl;
-        }
-        await updateManhole(op.manholeId, payload);
+
+        console.error("Network or server error during sync, halting flush cycle:", op, err);
+        break;
       }
-      onProgress?.(i + 1, total);
-    } catch (err) {
-      console.error("Failed to sync operation:", op, err);
-      // Keep this item and everything after it — retry next flush cycle.
-      remaining.push(...queue.slice(i));
-      break;
     }
-  }
 
-  await writeQueue(remaining);
+    if (syncedOps.length > 0) {
+      notifyFlushed(syncedOps);
+    }
+  } finally {
+    isFlushing = false;
+  }
 }
 
 /**

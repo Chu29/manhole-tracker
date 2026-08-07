@@ -22,7 +22,7 @@ export async function fetchNearbyManholes(
 
 // POST /manholes
 export async function createManhole(
-  payload: CreateManholePayload,
+  payload: CreateManholePayload & { id?: string },
 ): Promise<Manhole> {
   const { data } = await apiClient.post<Manhole>("/manholes", payload);
   return data;
@@ -46,7 +46,7 @@ export async function updateManhole(
 // POST /manholes/:id/inspections
 export async function createInspection(
   manholeId: string,
-  payload: { notes?: string; photoUrl?: string },
+  payload: { id?: string; notes?: string; photoUrl?: string },
 ): Promise<Inspection> {
   const { data } = await apiClient.post<Inspection>(
     `/manholes/${manholeId}/inspections`,
