@@ -6,3 +6,5 @@ apps/mobile/.expo/
 apps/backend/dist/
 *.log
 apps/admin/.next
+*.apk
+*.aab

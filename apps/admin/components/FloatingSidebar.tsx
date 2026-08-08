@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import { clearToken } from "@/lib/auth";
 import { Manhole, getMe, Technician } from "@/lib/api";
 import { StatusPip } from "./StatusPip";
+import {
+  UsersIcon,
+  ClipboardIcon,
+  RefreshIcon,
+  SignOutIcon,
+  ShieldIcon,
+  UtilityIcon,
+  RulerIcon,
+  MapIcon,
+} from "./Icons";
 
 interface FloatingSidebarProps {
   manholes: Manhole[];
@@ -23,7 +33,6 @@ export function FloatingSidebar({
   manholes,
   selectedManholeId,
   onSelectManhole,
-  onRegisterClick,
   onRefresh,
   loading = false,
   searchTerm = "",
@@ -32,7 +41,7 @@ export function FloatingSidebar({
   onUtilityChange,
 }: FloatingSidebarProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"status" | "manholes">("status");
+  const [activeTab, setActiveTab] = useState<"assets" | "status">("assets");
   const [user, setUser] = useState<Technician | null>(null);
 
   useEffect(() => {
@@ -44,7 +53,7 @@ export function FloatingSidebar({
     router.push("/login");
   }
 
-  const utilityTypes = ["all", "sewer", "water", "telecom", "electrical"];
+  const utilityTypes = ["all", "telecom", "sewer", "water", "electrical"];
 
   const filteredManholes = manholes.filter((m) => {
     const matchesSearch =
@@ -53,97 +62,74 @@ export function FloatingSidebar({
       m.utilityType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       m.status?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesUtility =
-      !utilityFilter ||
-      utilityFilter === "all" ||
-      m.utilityType === utilityFilter;
+      !utilityFilter || utilityFilter === "all" || m.utilityType === utilityFilter;
     return matchesSearch && matchesUtility;
   });
 
   return (
-    <aside className="glass-panel fixed top-4 right-4 bottom-4 z-20 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col justify-between rounded-3xl p-5 shadow-2xl transition-all">
-      {/* 1. Header Profile Box */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-ink-800/60 p-3.5 shadow-inner">
+    <aside className="glass-panel fixed top-4 right-4 bottom-4 z-20 flex w-[380px] max-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] flex-col justify-between rounded-3xl p-5 shadow-2xl overflow-hidden transition-all">
+      {/* Top Main Section */}
+      <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-hidden">
+        {/* User Profile Banner */}
+        <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-ink-900/70 p-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 font-bold font-display border border-emerald-500/30">
-              {user ? user.name.substring(0, 2).toUpperCase() : "..."}
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400 font-bold font-display border border-sky-500/25 shadow-md shadow-sky-500/10">
+              {user ? user.name.substring(0, 2).toUpperCase() : "··"}
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-display text-sm font-bold text-mist">
-                  {user ? user.name : "Loading..."}
-                </span>
+                <span className="font-display text-sm font-bold text-white">{user?.name || "Loading…"}</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-              <p className="font-mono text-[11px] text-haze flex items-center gap-1">
-                <span>⚡</span> Admin Console active
+              <p className="font-mono text-[10px] text-haze/70 flex items-center gap-1">
+                <ShieldIcon className="h-3 w-3 text-sky-400 inline" /> Admin Console
               </p>
             </div>
           </div>
           <button
             onClick={onRefresh}
             title="Refresh assets"
-            className="rounded-xl border border-white/10 p-2 text-haze hover:border-survey/40 hover:bg-ink-700 hover:text-survey transition-colors"
+            className="rounded-xl border border-white/8 p-2 text-haze hover:border-sky-400/40 hover:text-sky-400 hover:bg-ink-800/50 transition-all active:scale-90"
           >
-            <svg
-              className={`h-4 w-4 ${loading ? "animate-spin text-survey" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <RefreshIcon className={`h-4 w-4 ${loading ? "animate-spin text-sky-400" : ""}`} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex rounded-xl bg-ink-950/80 p-1 border border-white/5 shrink-0">
+          {(["assets", "status"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-bold capitalize transition-all ${
+                activeTab === tab
+                  ? "bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg shadow-sky-500/15"
+                  : "text-haze hover:text-white"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
+              {tab === "assets" ? `Assets (${filteredManholes.length})` : "Status"}
+            </button>
+          ))}
         </div>
 
-        {/* 2. Navigation Tabs */}
-        <div className="flex rounded-xl bg-ink-800/80 p-1 border border-white/5">
-          <button
-            onClick={() => setActiveTab("status")}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "status"
-                ? "bg-ink-700 text-mist shadow-md border border-white/10"
-                : "text-haze hover:text-mist"
-            }`}
-          >
-            Status
-          </button>
-          <button
-            onClick={() => setActiveTab("manholes")}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
-              activeTab === "manholes"
-                ? "bg-ink-700 text-mist shadow-md border border-white/10"
-                : "text-haze hover:text-mist"
-            }`}
-          >
-            Manholes ({filteredManholes.length})
-          </button>
-        </div>
-
-        {/* Search & Category Filter Pills */}
-        <div className="flex flex-col gap-2">
+        {/* Search & Filters */}
+        <div className="flex flex-col gap-2 shrink-0">
           <input
             type="text"
-            placeholder="Search code or status..."
+            placeholder="Search code, status, utility…"
             value={searchTerm}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-ink-950/60 px-3 py-2 text-xs text-mist placeholder-haze outline-none focus:border-survey/60"
+            className="w-full rounded-xl border border-white/8 bg-ink-950/60 px-3.5 py-2 text-xs text-white placeholder-haze/50 outline-none focus:border-sky-400/50 transition-all"
           />
-
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
             {utilityTypes.map((u) => (
               <button
                 key={u}
                 onClick={() => onUtilityChange?.(u === "all" ? null : u)}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-medium capitalize transition-all shrink-0 ${
+                className={`rounded-lg px-2.5 py-1 text-[10px] font-bold capitalize tracking-wide shrink-0 border transition-all ${
                   utilityFilter === u || (u === "all" && !utilityFilter)
-                    ? "bg-caution/20 text-caution border border-caution/40"
-                    : "bg-ink-800/60 text-haze border border-white/5 hover:text-mist"
+                    ? "bg-sky-500/15 text-sky-300 border-sky-400/40"
+                    : "bg-ink-900/50 text-haze border-white/5 hover:text-white hover:border-white/15"
                 }`}
               >
                 {u}
@@ -152,11 +138,13 @@ export function FloatingSidebar({
           </div>
         </div>
 
-        {/* 3. Asset Scrollable List */}
-        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-380px)] pr-1 space-y-2">
+        {/* Scrollable Asset List */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
           {filteredManholes.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 text-center text-xs text-haze">
-              No manholes found
+            <div className="flex h-36 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 text-center p-4">
+              <MapIcon className="h-6 w-6 text-haze/50" />
+              <p className="text-xs font-bold text-white">No assets found</p>
+              <p className="text-[10px] text-haze">Try adjusting filters or search terms</p>
             </div>
           ) : (
             filteredManholes.map((m) => {
@@ -165,25 +153,26 @@ export function FloatingSidebar({
                 <div
                   key={m.id}
                   onClick={() => onSelectManhole?.(m.id)}
-                  className={`group relative flex flex-col gap-1.5 rounded-xl border p-3 cursor-pointer transition-all ${
+                  className={`group flex flex-col gap-2 rounded-2xl border p-3.5 cursor-pointer transition-all ${
                     isSelected
-                      ? "border-survey bg-survey/10 shadow-lg"
-                      : "border-white/5 bg-ink-800/40 hover:border-white/20 hover:bg-ink-800/80"
+                      ? "border-sky-400/60 bg-sky-500/10 shadow-lg shadow-sky-500/8"
+                      : "border-white/5 bg-ink-900/40 hover:border-white/15 hover:bg-ink-900/70"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-mist group-hover:text-survey transition-colors">
+                    <span className="font-mono text-xs font-bold text-white group-hover:text-sky-300 transition-colors">
                       {m.code || `MH-${m.id.substring(0, 6)}`}
                     </span>
                     <StatusPip status={m.status} showLabel />
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-haze">
-                    <span className="capitalize">
-                      🔧 {m.utilityType || "unassigned"}
+                  <div className="flex items-center justify-between text-[10px] text-haze pt-1.5 border-t border-white/5">
+                    <span className="capitalize font-medium flex items-center gap-1">
+                      <UtilityIcon type={m.utilityType} className="h-3 w-3 text-sky-400" />
+                      {m.utilityType || "unassigned"}
                     </span>
-                    <span>
-                      📏 {m.depthMeters ? `${m.depthMeters}m` : "N/A"}
+                    <span className="font-mono flex items-center gap-1">
+                      <RulerIcon className="h-3 w-3 text-haze/70" />
+                      {m.depthMeters ? `${m.depthMeters}m` : "N/A"}
                     </span>
                   </div>
                 </div>
@@ -193,30 +182,29 @@ export function FloatingSidebar({
         </div>
       </div>
 
-      {/* 4. Bottom Action Area */}
-      <div className="mt-4 flex flex-col gap-2 pt-3 border-t border-white/10">
+      {/* Fixed Bottom Navigation & Sign Out */}
+      <div className="shrink-0 pt-3 mt-3 border-t border-white/8 flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => router.push("/technicians")}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-ink-800/80 px-3 py-2 text-xs font-semibold text-mist hover:border-survey/40 hover:bg-ink-700 transition-all"
+            className="flex items-center justify-center gap-2 rounded-xl border border-white/8 bg-ink-900/60 px-3 py-2 text-xs font-semibold text-white hover:border-sky-400/30 hover:bg-ink-800/70 transition-all"
           >
-            <span>👷</span> Technicians
+            <UsersIcon className="h-3.5 w-3.5 text-sky-400" /> Technicians
           </button>
           <button
             onClick={() => router.push("/inspections")}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-ink-800/80 px-3 py-2 text-xs font-semibold text-mist hover:border-survey/40 hover:bg-ink-700 transition-all"
+            className="flex items-center justify-center gap-2 rounded-xl border border-white/8 bg-ink-900/60 px-3 py-2 text-xs font-semibold text-white hover:border-sky-400/30 hover:bg-ink-800/70 transition-all"
           >
-            <span>📋</span> Inspection Logs
+            <ClipboardIcon className="h-3.5 w-3.5 text-sky-400" /> Inspections
           </button>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-300 transition-colors hover:bg-rose-500/20"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/8 px-4 py-2 text-xs font-semibold text-rose-300 hover:bg-rose-500/15 transition-all active:scale-[0.98]"
         >
-          <span>Logout</span>
+          <SignOutIcon className="h-3.5 w-3.5 text-rose-400" /> Sign Out
         </button>
       </div>
     </aside>
-
   );
 }

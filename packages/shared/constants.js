@@ -18,7 +18,7 @@ export const DEFAULT_RADIUS_METERS = 500;
  *  to keep the geospatial query bounded. */
 export const MAX_RADIUS_METERS = 5000;
 
-export const UTILITY_TYPES = ["sewer", "electrical", "telecom", "water"];
+export const UTILITY_TYPES = ["telecom"];
 
 export const MANHOLE_STATUSES = ["active", "inactive", "buried", "damaged"];
 

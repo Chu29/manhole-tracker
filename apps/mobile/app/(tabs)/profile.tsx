@@ -46,12 +46,13 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header Avatar and Name */}
-        <View style={styles.header}>
+        <View style={styles.heroHeader}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <Text style={styles.name}>{technician?.name || "Field Agent"}</Text>
           <View style={styles.roleBadge}>
+            <Ionicons name="shield-checkmark-outline" size={13} color={Colors.primary} />
             <Text style={styles.roleText}>
               {technician?.role || "Technician"}
             </Text>
@@ -61,24 +62,47 @@ export default function ProfileScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Ionicons name="folder-open" size={24} color={Colors.primary} />
+            <View style={[styles.statIconWrapper, { backgroundColor: Colors.primaryLight }]}>
+              <Ionicons name="folder-open-outline" size={18} color={Colors.primary} />
+            </View>
             <Text style={styles.statValue}>{cachedManholesCount}</Text>
-            <Text style={styles.statLabel}>Cached Manholes</Text>
+            <Text style={styles.statLabel}>Cached Assets</Text>
           </View>
+
           <View style={styles.statCard}>
-            <Ionicons
-              name="cloud-upload"
-              size={24}
-              color={pendingCount > 0 ? Colors.warning : Colors.success}
-            />
-            <Text style={styles.statValue}>{pendingCount}</Text>
+            <View
+              style={[
+                styles.statIconWrapper,
+                {
+                  backgroundColor:
+                    pendingCount > 0 ? Colors.warningLight : Colors.successLight,
+                },
+              ]}
+            >
+              <Ionicons
+                name="cloud-upload-outline"
+                size={18}
+                color={pendingCount > 0 ? Colors.warning : Colors.success}
+              />
+            </View>
+            <Text
+              style={[
+                styles.statValue,
+                pendingCount > 0 && { color: Colors.warning },
+              ]}
+            >
+              {pendingCount}
+            </Text>
             <Text style={styles.statLabel}>Pending Sync</Text>
           </View>
         </View>
 
         {/* Info Card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Account Details</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="person-outline" size={18} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Account Details</Text>
+          </View>
 
           <View style={styles.infoRow}>
             <Ionicons
@@ -103,7 +127,7 @@ export default function ProfileScreen() {
               style={styles.rowIcon}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>Organization ID</Text>
+              <Text style={styles.infoLabel}>Organization</Text>
               <Text style={styles.infoValue}>
                 {technician?.orgId || "Independent Contractor"}
               </Text>
@@ -112,10 +136,11 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={() => copyToClipboard(technician.orgId!, "Org ID")}
                 style={styles.copyBtn}
+                activeOpacity={0.7}
               >
                 <Ionicons
                   name="copy-outline"
-                  size={18}
+                  size={16}
                   color={Colors.primary}
                 />
               </TouchableOpacity>
@@ -156,10 +181,11 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={() => copyToClipboard(technician.id, "Technician ID")}
                 style={styles.copyBtn}
+                activeOpacity={0.7}
               >
                 <Ionicons
                   name="copy-outline"
-                  size={18}
+                  size={16}
                   color={Colors.primary}
                 />
               </TouchableOpacity>
@@ -171,17 +197,18 @@ export default function ProfileScreen() {
         {pendingCount > 0 && (
           <View style={styles.syncCard}>
             <View style={styles.syncCardText}>
-              <Ionicons name="warning" size={22} color={Colors.warning} />
+              <Ionicons name="warning" size={20} color={Colors.warning} />
               <Text style={styles.syncTitle}>Unsynced Operations</Text>
             </View>
             <Text style={styles.syncDesc}>
               You have {pendingCount} offline inspection(s) or registration(s)
-              that need to be sent to the server.
+              waiting to be synced with the server.
             </Text>
             <TouchableOpacity
               style={[styles.flushButton, flushing && styles.disabled]}
               onPress={handleFlush}
               disabled={flushing}
+              activeOpacity={0.8}
             >
               <Text style={styles.flushText}>
                 {flushing ? "Syncing with Server…" : "Force Sync Now"}
@@ -191,9 +218,13 @@ export default function ProfileScreen() {
         )}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
           <Ionicons name="log-out-outline" size={20} color={Colors.danger} />
-          <Text style={styles.logoutText}>Sign Out</Text>
+          <Text style={styles.logoutText}>Sign Out Account</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -202,18 +233,16 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Colors.background },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
+  container: { paddingBottom: 40 },
+  heroHeader: {
     alignItems: "center",
-    marginVertical: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
   },
   avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     backgroundColor: Colors.primaryLight,
     borderColor: Colors.primary,
     borderWidth: 2,
@@ -221,63 +250,80 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
     shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: Colors.primary,
+    fontSize: 30,
+    fontWeight: "800",
+    color: Colors.primaryDark,
   },
   name: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
     color: Colors.text,
+    letterSpacing: -0.5,
     marginBottom: 6,
   },
   roleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primaryLight,
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
+    gap: 4,
   },
   roleText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "800",
     color: Colors.primary,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   statsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: "center",
-    marginHorizontal: 6,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
     elevation: 1,
+  },
+  statIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     color: Colors.text,
-    marginVertical: 4,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "600",
     color: Colors.textMuted,
     textAlign: "center",
   },
@@ -287,53 +333,65 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
     elevation: 1,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
+  },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: Colors.text,
-    marginBottom: 16,
+    letterSpacing: -0.2,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   rowIcon: {
-    marginRight: 14,
+    marginRight: 12,
   },
   rowContent: {
     flex: 1,
   },
   infoLabel: {
     fontSize: 11,
+    fontWeight: "700",
     color: Colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 2,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   infoValue: {
     fontSize: 14,
+    fontWeight: "600",
     color: Colors.text,
   },
   monospace: {
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     fontSize: 12,
-    color: Colors.textMuted,
+    fontWeight: "700",
+    color: Colors.primaryDark,
   },
   copyBtn: {
-    padding: 8,
+    padding: 6,
+    backgroundColor: Colors.primaryLight,
+    borderRadius: 8,
   },
   divider: {
     height: 1,
     backgroundColor: Colors.border,
-    marginVertical: 4,
+    marginVertical: 6,
   },
   syncCard: {
     backgroundColor: Colors.warningLight,
@@ -341,7 +399,8 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.warning,
-    marginBottom: 20,
+    marginBottom: 16,
+    marginHorizontal: 16,
   },
   syncCardText: {
     flexDirection: "row",
@@ -350,27 +409,27 @@ const styles = StyleSheet.create({
   },
   syncTitle: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "800",
     color: Colors.warning,
     marginLeft: 8,
   },
   syncDesc: {
     fontSize: 13,
     color: Colors.warning,
-    opacity: 0.85,
+    fontWeight: "500",
     marginBottom: 12,
     lineHeight: 18,
   },
   flushButton: {
     backgroundColor: Colors.warning,
-    borderRadius: 10,
+    borderRadius: 12,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
   flushText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 14,
   },
   disabled: {
@@ -378,18 +437,21 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     flexDirection: "row",
-    height: 50,
+    height: 52,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Colors.danger,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.surface,
+    marginHorizontal: 16,
+    marginTop: 4,
   },
   logoutText: {
     color: Colors.danger,
-    fontWeight: "600",
+    fontWeight: "800",
     fontSize: 15,
     marginLeft: 8,
   },
 });
+

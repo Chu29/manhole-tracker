@@ -20,59 +20,63 @@ export function FloatingMetrics({
   const metrics = [
     {
       id: "all",
-      label: "TOTAL",
+      label: "TOTAL ASSETS",
       value: total,
-      color: "text-mist",
-      bg: "bg-ink-800/80 border-ink-700",
-      activeBg: "bg-survey/20 border-survey text-survey",
+      color: "text-white",
+      dot: "bg-sky-400",
+      bg: "border-white/10",
+      activeBg: "border-sky-400 bg-sky-500/15 shadow-sky-500/15",
     },
     {
       id: "active",
       label: "ACTIVE",
       value: active,
       color: "text-emerald-400",
-      bg: "bg-emerald-500/10 border-emerald-500/20",
-      activeBg: "bg-emerald-500/30 border-emerald-400 text-emerald-300",
+      dot: "bg-emerald-400",
+      bg: "border-emerald-500/20 bg-emerald-500/5",
+      activeBg: "border-emerald-400 bg-emerald-500/20 shadow-emerald-500/15",
     },
     {
       id: "damaged",
       label: "DAMAGED",
       value: damaged,
       color: "text-rose-400",
-      bg: "bg-rose-500/10 border-rose-500/20",
-      activeBg: "bg-rose-500/30 border-rose-400 text-rose-300",
+      dot: "bg-rose-400",
+      bg: "border-rose-500/20 bg-rose-500/5",
+      activeBg: "border-rose-400 bg-rose-500/20 shadow-rose-500/15",
     },
     {
       id: "other",
       label: "INACTIVE",
       value: buriedOrInactive,
       color: "text-amber-400",
-      bg: "bg-amber-500/10 border-amber-500/20",
-      activeBg: "bg-amber-500/30 border-amber-400 text-amber-300",
+      dot: "bg-amber-400",
+      bg: "border-amber-500/20 bg-amber-500/5",
+      activeBg: "border-amber-400 bg-amber-500/20 shadow-amber-500/15",
     },
   ];
 
   return (
-    <div className="absolute bottom-6 left-4 z-20 flex flex-col gap-2.5">
+    <div className="absolute bottom-6 left-4 z-20 flex flex-col gap-2">
       {metrics.map((m) => {
-        const isSelected = selectedFilter === m.id || (m.id === "all" && !selectedFilter);
+        const isActive = selectedFilter === m.id || (m.id === "all" && !selectedFilter);
         return (
           <button
             key={m.id}
             onClick={() => onFilterSelect?.(m.id === "all" ? null : m.id)}
-            className={`glass-panel flex items-center justify-between gap-4 rounded-2xl px-3.5 py-2.5 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg min-w-[130px] ${
-              isSelected ? m.activeBg : `${m.bg} hover:border-white/20`
+            className={`glass-panel flex items-center justify-between gap-5 rounded-2xl px-4 py-2.5 min-w-[140px] border transition-all duration-200 hover:scale-[1.04] active:scale-95 shadow-xl ${
+              isActive ? m.activeBg : `${m.bg} hover:border-white/20`
             }`}
           >
             <div className="flex flex-col items-start">
-              <span className="font-mono text-[10px] font-bold tracking-wider text-haze uppercase">
+              <span className="font-mono text-[9px] font-bold tracking-[0.12em] text-haze uppercase">
                 {m.label}
               </span>
-              <span className={`font-display text-lg font-extrabold ${m.color}`}>
+              <span className={`font-display text-xl font-black tracking-tight ${m.color}`}>
                 {m.value}
               </span>
             </div>
-            <div className="h-2 w-2 rounded-full bg-current opacity-80" />
+            <div className={`h-2.5 w-2.5 rounded-full ${m.dot} ${isActive ? "animate-glow-pulse" : "opacity-50"}`} />
           </button>
         );
       })}

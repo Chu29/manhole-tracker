@@ -83,7 +83,6 @@ export async function getTechnician(id: string) {
 }
 
 export async function updateTechnician(id: string, input: { role?: string; orgId?: string | null }) {
-  const { data } = await api.get<Technician>(`/technicians/${id}`);
   const { data: updated } = await api.patch<Technician>(`/technicians/${id}`, input);
   return updated;
 }

@@ -1,28 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["500", "700"],
-});
-
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  weight: ["400", "500", "600"],
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  weight: ["400", "500"],
-});
-
 export const metadata: Metadata = {
-  title: "Manhole Tracker — Admin",
-  description: "Manage manhole records, inspections, and field coverage.",
+  title: "Manhole Tracker — Command Center",
+  description:
+    "Geospatial infrastructure command center for manhole records, field technician logs, and inspection operations.",
 };
 
 export default function RootLayout({
@@ -31,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-blueprint bg-grid">{children}</body>
+    <html lang="en">
+      <body className="min-h-screen bg-ink-950 antialiased">{children}</body>
     </html>
   );
 }

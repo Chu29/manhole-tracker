@@ -1,23 +1,34 @@
 export const Colors = {
-  primary: "#1A6EBF",
-  primaryLight: "#E8F1FB",
-  background: "#F5F7FA",
+  primary: "#0284C7",
+  primaryDark: "#0369A1",
+  primaryLight: "#F0F9FF",
+  background: "#F8FAFC",
   surface: "#FFFFFF",
-  border: "#DDE3EC",
-  text: "#1C2333",
-  textMuted: "#6B7A99",
-  danger: "#C0392B",
-  dangerLight: "#FDECEA",
-  warning: "#E67E22",
-  warningLight: "#FEF5E7",
-  success: "#27AE60",
-  successLight: "#EAFAF1",
-  offline: "#95A5A6",
+  border: "#E2E8F0",
+  text: "#0F172A",
+  textMuted: "#64748B",
+  danger: "#EF4444",
+  dangerLight: "#FEF2F2",
+  warning: "#F59E0B",
+  warningLight: "#FFFBEB",
+  success: "#10B981",
+  successLight: "#ECFDF5",
+  offline: "#475569",
+  cardShadow: "#0F172A",
 } as const;
 
 export const UtilityColors: Record<string, string> = {
-  sewer: "#8E44AD",
-  electrical: "#F39C12",
-  telecom: "#2980B9",
-  water: "#16A085",
+  telecom: "#0284C7",
+  sewer: "#7E22CE",
+  electrical: "#B45309",
+  water: "#0F766E",
 };
+
+export const UtilityStyles: Record<string, { bg: string; text: string; icon: string }> = {
+  telecom: { bg: "#E0F2FE", text: "#0369A1", icon: "hardware-chip-outline" },
+  sewer: { bg: "#F3E8FF", text: "#7E22CE", icon: "water-outline" },
+  electrical: { bg: "#FEF3C7", text: "#B45309", icon: "flash-outline" },
+  water: { bg: "#CCFBF1", text: "#0F766E", icon: "map-outline" },
+};
+
+

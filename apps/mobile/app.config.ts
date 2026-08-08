@@ -5,6 +5,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "Manhole Tracker",
   slug: "mobile",
   version: "1.0.0",
+  runtimeVersion: "1.0.0",
+  updates: {
+    url: "https://u.expo.dev/11bbb9f3-91e9-4b19-9492-fa0937865948",
+  },
   orientation: "portrait",
   scheme: "mobile",
   icon: "./assets/images/icon.png",

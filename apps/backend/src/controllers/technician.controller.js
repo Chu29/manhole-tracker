@@ -93,11 +93,24 @@ export async function updateTechnician(req, res) {
     throw new HttpError(404, "Technician not found");
   }
 
+  let parsedOrgId = undefined;
+  if (orgId !== undefined) {
+    if (orgId === null || orgId === "") {
+      parsedOrgId = null;
+    } else {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgId);
+      if (!isUuid) {
+        throw new HttpError(400, "Organization ID must be a valid UUID format (or left blank)");
+      }
+      parsedOrgId = orgId;
+    }
+  }
+
   const updated = await prisma.technician.update({
     where: { id: req.params.id },
     data: {
       role: role !== undefined ? role : existing.role,
-      orgId: orgId !== undefined ? orgId : existing.orgId,
+      orgId: parsedOrgId !== undefined ? parsedOrgId : existing.orgId,
     },
     select: {
       id: true,

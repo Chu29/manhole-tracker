@@ -1,7 +1,7 @@
 import { ManholeStatus } from "@/lib/api";
 
 const STATUS_META: Record<ManholeStatus, { label: string; color: string }> = {
-  active: { label: "Active", color: "#38BDF8" },
+  active: { label: "Active", color: "#34D399" },
   inactive: { label: "Inactive", color: "#A78BFA" },
   buried: { label: "Buried", color: "#F5A623" },
   damaged: { label: "Damaged", color: "#F87171" },

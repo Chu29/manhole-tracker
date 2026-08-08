@@ -196,18 +196,19 @@ export default function MapScreen() {
         ]}
       >
         <View style={styles.topStatsBadge}>
-          <Ionicons name="layers" size={14} color={Colors.primary} />
+          <View style={styles.livePulseDot} />
+          <Ionicons name="map-outline" size={14} color={Colors.primary} />
           <Text style={styles.topStatsText}>
             {controller.filteredList.length}
             {controller.filteredList.length !== controller.stats.total
               ? ` / ${controller.stats.total}`
-              : ""}
+              : ""} Assets
           </Text>
           {controller.isFetching && (
             <ActivityIndicator
               size="small"
               color={Colors.primary}
-              style={{ marginLeft: 6 }}
+              style={{ marginLeft: 4 }}
             />
           )}
         </View>
@@ -225,7 +226,7 @@ export default function MapScreen() {
       <View
         style={[
           styles.chipBarWrapper,
-          { top: Platform.OS === "ios" ? insets.top + 40 : 56 },
+          { top: Platform.OS === "ios" ? insets.top + 48 : 64 },
         ]}
       >
         <ScrollView
@@ -238,11 +239,11 @@ export default function MapScreen() {
             onPress={() =>
               controller.setShowRadiusPicker(!controller.showRadiusPicker)
             }
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <Ionicons name="radio-outline" size={14} color={Colors.primary} />
             <Text style={[styles.chipText, styles.chipAccentText]}>
-              {controller.scanRadius >= 1000
+              Radius: {controller.scanRadius >= 1000
                 ? `${controller.scanRadius / 1000}km`
                 : `${controller.scanRadius}m`}
             </Text>
@@ -266,7 +267,7 @@ export default function MapScreen() {
                 onPress={() =>
                   controller.setSelectedUtility(isActive ? null : type)
                 }
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
                 <Ionicons
                   name={getUtilityIcon(type)}
@@ -280,7 +281,7 @@ export default function MapScreen() {
                     !isActive && { color },
                   ]}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type.toUpperCase()}
                 </Text>
                 {controller.stats.byUtility[type] && (
                   <View
@@ -316,7 +317,7 @@ export default function MapScreen() {
                 onPress={() =>
                   controller.setSelectedStatus(isActive ? null : status)
                 }
-                activeOpacity={0.7}
+                activeOpacity={0.8}
               >
                 <View
                   style={[
@@ -331,7 +332,7 @@ export default function MapScreen() {
                     !isActive && { color },
                   ]}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status.toUpperCase()}
                 </Text>
               </TouchableOpacity>
             );
@@ -344,7 +345,7 @@ export default function MapScreen() {
                 controller.setSelectedUtility(null);
                 controller.setSelectedStatus(null);
               }}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
               <Ionicons name="close-circle" size={14} color={Colors.danger} />
               <Text style={[styles.chipText, { color: Colors.danger }]}>
@@ -360,10 +361,10 @@ export default function MapScreen() {
         <View
           style={[
             styles.radiusPicker,
-            { top: Platform.OS === "ios" ? insets.top + 82 : 98 },
+            { top: Platform.OS === "ios" ? insets.top + 92 : 108 },
           ]}
         >
-          <Text style={styles.radiusPickerTitle}>Search Radius</Text>
+          <Text style={styles.radiusPickerTitle}>Search Radius Filter</Text>
           <View style={styles.radiusGrid}>
             {RADIUS_OPTIONS.map((r) => (
               <TouchableOpacity
@@ -373,6 +374,7 @@ export default function MapScreen() {
                   controller.scanRadius === r && styles.radiusOptionActive,
                 ]}
                 onPress={() => controller.handleRadiusChange(r)}
+                activeOpacity={0.8}
               >
                 <Text
                   style={[
@@ -393,7 +395,7 @@ export default function MapScreen() {
       <View
         style={[
           styles.fabColumn,
-          { bottom: insets.bottom + (controller.selectedManhole ? 150 : 16) },
+          { bottom: insets.bottom + (controller.selectedManhole ? 170 : 20) },
         ]}
       >
         <TouchableOpacity
@@ -403,7 +405,7 @@ export default function MapScreen() {
               t === "standard" ? "satellite" : "standard",
             )
           }
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
           <Ionicons
             name={
@@ -418,7 +420,7 @@ export default function MapScreen() {
         <TouchableOpacity
           style={styles.fab}
           onPress={controller.handleRefresh}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           disabled={controller.isFetching}
         >
           <Ionicons
@@ -430,7 +432,7 @@ export default function MapScreen() {
         <TouchableOpacity
           style={[styles.fab, styles.fabPrimary]}
           onPress={controller.centreOnMe}
-          activeOpacity={0.7}
+          activeOpacity={0.85}
         >
           <Ionicons name="navigate" size={20} color="#fff" />
         </TouchableOpacity>
@@ -448,18 +450,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.surface,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 20,
     gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
     borderColor: Colors.border,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  topStatsText: { fontSize: 13, fontWeight: "700", color: Colors.text },
+  livePulseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.success,
+  },
+  topStatsText: { fontSize: 13, fontWeight: "800", color: Colors.text },
   errorBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -470,7 +478,7 @@ const styles = StyleSheet.create({
     gap: 4,
     maxWidth: 200,
   },
-  errorBadgeText: { fontSize: 11, color: Colors.danger, fontWeight: "500" },
+  errorBadgeText: { fontSize: 11, color: Colors.danger, fontWeight: "600" },
   chipBarWrapper: { position: "absolute", left: 0, right: 0 },
   chipBar: { paddingHorizontal: 14, gap: 8, paddingVertical: 2 },
   chip: {
@@ -483,22 +491,22 @@ const styles = StyleSheet.create({
     gap: 5,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
     elevation: 2,
   },
   chipAccent: {
-    borderColor: Colors.primaryLight,
+    borderColor: "#BAE6FD",
     backgroundColor: Colors.primaryLight,
   },
-  chipAccentText: { color: Colors.primary },
+  chipAccentText: { color: Colors.primary, fontWeight: "800" },
   chipClear: {
     borderColor: Colors.dangerLight,
     backgroundColor: Colors.dangerLight,
   },
-  chipText: { fontSize: 12, fontWeight: "600", color: Colors.text },
+  chipText: { fontSize: 11, fontWeight: "700", color: Colors.text, letterSpacing: 0.5 },
   chipCount: {
     backgroundColor: Colors.primaryLight,
     paddingHorizontal: 6,
@@ -506,29 +514,29 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 2,
   },
-  chipCountText: { fontSize: 10, fontWeight: "700", color: Colors.primary },
+  chipCountText: { fontSize: 10, fontWeight: "800", color: Colors.primary },
   radiusPicker: {
     position: "absolute",
     left: 14,
     right: 14,
     backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowRadius: 10,
     elevation: 6,
   },
   radiusPickerTitle: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "800",
     color: Colors.text,
     marginBottom: 10,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   radiusGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   radiusOption: {
@@ -543,26 +551,32 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-  radiusOptionText: { fontSize: 13, fontWeight: "600", color: Colors.text },
+  radiusOptionText: { fontSize: 13, fontWeight: "700", color: Colors.text },
   radiusOptionTextActive: { color: "#fff" },
   fabColumn: { position: "absolute", right: 14, gap: 10 },
   fab: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 4,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  fabPrimary: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
+  fabPrimary: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+  },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+
   userDotOuter: {
     width: 22,
     height: 22,

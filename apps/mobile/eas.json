@@ -4,6 +4,13 @@
   },
   "build": {
     "local": {
+      "channel": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production",
       "android": {
         "buildType": "apk"
       }

@@ -6,21 +6,21 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          950: "#0B1220", // page background
-          900: "#0F172A", // panel background
-          800: "#16213A", // card / surface
-          700: "#1E2C4A", // borders, hairlines
+          950: "#0B1220",
+          900: "#0F172A",
+          800: "#16213A",
+          700: "#1E2C4A",
         },
         caution: {
-          DEFAULT: "#F5A623", // amber accent - manhole/utility caution color
+          DEFAULT: "#F5A623",
           dim: "#8A5F1D",
         },
         survey: {
-          DEFAULT: "#38BDF8", // cyan - blueprint / survey lines
+          DEFAULT: "#38BDF8",
           dim: "#1F6C8C",
         },
-        mist: "#E8ECF1", // primary text
-        haze: "#94A3B8", // secondary text
+        mist: "#E8ECF1",
+        haze: "#94A3B8",
       },
       fontFamily: {
         display: ["var(--font-display)", "system-ui", "sans-serif"],
@@ -33,6 +33,15 @@ const config: Config = {
       },
       backgroundSize: {
         grid: "28px 28px",
+      },
+      keyframes: {
+        "glow-pulse": {
+          "0%, 100%": { opacity: "0.4" },
+          "50%": { opacity: "0.8" },
+        },
+      },
+      animation: {
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
       },
     },
   },

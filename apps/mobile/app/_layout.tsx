@@ -6,6 +6,8 @@ import { useAuthStore } from "../store/use-auth-store";
 import { useManholeStore } from "../store/use-manhole-store";
 import { startQueueFlusher } from "../services/offline-queue";
 
+import * as Updates from "expo-updates";
+
 /**
  * Auth gate: redirects unauthenticated users to /auth/login and authenticated
  * users away from the auth screens.
@@ -30,6 +32,23 @@ function useAuthGate() {
 export default function RootLayout() {
   const { hydrate: hydrateAuth } = useAuthStore();
   const { hydrate: hydrateManholes } = useManholeStore();
+
+  // Check for updates on startup
+  useEffect(() => {
+    async function checkUpdates() {
+      if (__DEV__) return;
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch (e) {
+        // Ignore update errors in offline/poor network mode
+      }
+    }
+    checkUpdates();
+  }, []);
 
   // Hydrate persisted state and start offline queue flusher on launch
   useEffect(() => {

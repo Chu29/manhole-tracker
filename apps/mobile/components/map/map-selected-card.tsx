@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors, UtilityColors } from "../../constants/theme";
+import { Colors, UtilityColors, UtilityStyles } from "../../constants/theme";
 import { formatDistance } from "../../services/geo";
 import { Manhole } from "../../api/manholes";
 
@@ -24,53 +24,43 @@ export const MapSelectedCard = React.memo(
     formatRelativeDate,
   }: MapSelectedCardProps) => {
     const statusColor = getStatusColor(manhole.status);
+    const typeKey = manhole.utilityType?.toLowerCase() ?? "telecom";
+    const utilityStyle = UtilityStyles[typeKey] ?? UtilityStyles.telecom;
 
     return (
       <TouchableOpacity
         style={styles.selectedCard}
         onPress={() => onNavigate(manhole.id)}
-        activeOpacity={0.7}
+        activeOpacity={0.88}
       >
         <View style={styles.selectedCardHeader}>
           <View
             style={[
               styles.utilityIconCircle,
-              {
-                backgroundColor: manhole.utilityType
-                  ? UtilityColors[manhole.utilityType] + "18"
-                  : Colors.primaryLight,
-              },
+              { backgroundColor: utilityStyle.bg },
             ]}
           >
             <Ionicons
-              name={getUtilityIcon(manhole.utilityType)}
+              name={utilityStyle.icon as any}
               size={20}
-              color={
-                manhole.utilityType
-                  ? UtilityColors[manhole.utilityType]
-                  : Colors.primary
-              }
+              color={utilityStyle.text}
             />
           </View>
+
           <View style={styles.selectedCardInfo}>
             <Text style={styles.selectedCardCode} numberOfLines={1}>
               {manhole.code ?? "Unnamed Manhole"}
             </Text>
             <View style={styles.selectedCardMeta}>
-              {manhole.utilityType && (
-                <Text
-                  style={[
-                    styles.utilityTag,
-                    {
-                      color:
-                        UtilityColors[manhole.utilityType] ?? Colors.primary,
-                    },
-                  ]}
-                >
-                  {manhole.utilityType.toUpperCase()}
-                </Text>
-              )}
-              <View style={styles.statusRow}>
+              <Text style={[styles.utilityTag, { color: utilityStyle.text }]}>
+                {typeKey.toUpperCase()}
+              </Text>
+              <View
+                style={[
+                  styles.statusChip,
+                  { backgroundColor: statusColor + "15", borderColor: statusColor + "30" },
+                ]}
+              >
                 <View
                   style={[
                     styles.statusDotSmall,
@@ -78,22 +68,28 @@ export const MapSelectedCard = React.memo(
                   ]}
                 />
                 <Text style={[styles.statusTextSmall, { color: statusColor }]}>
-                  {manhole.status}
+                  {manhole.status.toUpperCase()}
                 </Text>
               </View>
             </View>
           </View>
+
           {manhole.distanceMeters !== undefined && (
             <View
               style={[
                 styles.distanceBadge,
-                manhole.distanceMeters < 10 && styles.distanceBadgeClose,
+                manhole.distanceMeters < 15 && styles.distanceBadgeClose,
               ]}
             >
+              <Ionicons
+                name="navigate-outline"
+                size={11}
+                color={manhole.distanceMeters < 15 ? "#166534" : Colors.primary}
+              />
               <Text
                 style={[
                   styles.distanceBadgeText,
-                  manhole.distanceMeters < 10 && styles.distanceBadgeTextClose,
+                  manhole.distanceMeters < 15 && styles.distanceBadgeTextClose,
                 ]}
               >
                 {formatDistance(manhole.distanceMeters)}
@@ -103,26 +99,27 @@ export const MapSelectedCard = React.memo(
         </View>
 
         <View style={styles.divider} />
+
         <View style={styles.detailGrid}>
           {manhole.depthMeters != null && (
             <View style={styles.detailItem}>
               <Ionicons
                 name="resize-outline"
                 size={14}
-                color={Colors.textMuted}
+                color={Colors.primary}
               />
-              <Text style={styles.detailLabel}>Depth</Text>
+              <Text style={styles.detailLabel}>Depth:</Text>
               <Text style={styles.detailValue}>{manhole.depthMeters}m</Text>
             </View>
           )}
           {manhole.lastInspectedAt && (
             <View style={styles.detailItem}>
               <Ionicons
-                name="checkmark-circle-outline"
+                name="time-outline"
                 size={14}
-                color={Colors.textMuted}
+                color={Colors.primary}
               />
-              <Text style={styles.detailLabel}>Inspected</Text>
+              <Text style={styles.detailLabel}>Inspected:</Text>
               <Text style={styles.detailValue}>
                 {formatRelativeDate(manhole.lastInspectedAt)}
               </Text>
@@ -133,17 +130,17 @@ export const MapSelectedCard = React.memo(
               <Ionicons
                 name="calendar-outline"
                 size={14}
-                color={Colors.textMuted}
+                color={Colors.primary}
               />
-              <Text style={styles.detailLabel}>Installed</Text>
+              <Text style={styles.detailLabel}>Installed:</Text>
               <Text style={styles.detailValue}>{manhole.installDate}</Text>
             </View>
           )}
         </View>
 
-        <View style={styles.viewDetailRow}>
-          <Text style={styles.viewDetailText}>View Full Details</Text>
-          <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
+        <View style={styles.viewDetailBtn}>
+          <Text style={styles.viewDetailText}>View Full Asset Details</Text>
+          <Ionicons name="arrow-forward" size={14} color="#fff" />
         </View>
       </TouchableOpacity>
     );
@@ -154,68 +151,82 @@ MapSelectedCard.displayName = "MapSelectedCard";
 const styles = StyleSheet.create({
   selectedCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   selectedCardHeader: { flexDirection: "row", alignItems: "center" },
   utilityIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
   },
   selectedCardInfo: { flex: 1 },
   selectedCardCode: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "800",
     color: Colors.text,
-    marginBottom: 4,
+    letterSpacing: -0.3,
+    marginBottom: 3,
   },
-  selectedCardMeta: { flexDirection: "row", alignItems: "center", gap: 10 },
-  utilityTag: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  statusDotSmall: { width: 7, height: 7, borderRadius: 4 },
-  statusTextSmall: { fontSize: 12, fontWeight: "500" },
+  selectedCardMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
+  utilityTag: { fontSize: 10, fontWeight: "800", letterSpacing: 0.8 },
+  statusChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 4,
+  },
+  statusDotSmall: { width: 6, height: 6, borderRadius: 3 },
+  statusTextSmall: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
   distanceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     borderRadius: 10,
+    gap: 4,
   },
-  distanceBadgeClose: { backgroundColor: Colors.successLight },
-  distanceBadgeText: { fontSize: 12, fontWeight: "700", color: Colors.primary },
-  distanceBadgeTextClose: { color: Colors.success },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 10 },
+  distanceBadgeClose: { backgroundColor: "#DCFCE7" },
+  distanceBadgeText: { fontSize: 11, fontWeight: "800", color: Colors.primary },
+  distanceBadgeTextClose: { color: "#166534" },
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 12 },
   detailGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 16,
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  detailItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  detailItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   detailLabel: {
     fontSize: 11,
+    fontWeight: "600",
     color: Colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
   },
-  detailValue: { fontSize: 13, fontWeight: "600", color: Colors.text },
-  viewDetailRow: {
+  detailValue: { fontSize: 12, fontWeight: "700", color: Colors.text },
+  viewDetailBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingTop: 6,
+    backgroundColor: Colors.primary,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
   },
-  viewDetailText: { fontSize: 13, fontWeight: "600", color: Colors.primary },
+  viewDetailText: { fontSize: 13, fontWeight: "700", color: "#fff" },
 });
+

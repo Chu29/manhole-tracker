@@ -42,7 +42,9 @@ export default function NearbyScreen() {
       <SafeAreaView style={styles.flex}>
         <OfflineBanner />
         <View style={[styles.emptyState, { flex: 1 }]}>
-          <Text style={styles.emptyIcon}>📍</Text>
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="location-outline" size={32} color={Colors.primary} />
+          </View>
           <Text style={styles.emptyTitle}>Location access needed</Text>
           <Text style={styles.emptyText}>
             Enable location permission in Settings to search and sort manholes
@@ -112,50 +114,68 @@ export default function NearbyScreen() {
         }
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
-              <View style={styles.avatarContainer}>
-                <Ionicons
-                  name="location-outline"
-                  size={32}
-                  color={Colors.primary}
-                />
-              </View>
-              <Text style={styles.name}>Nearby Tracker</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>Geospatial Scan</Text>
+            <View style={styles.heroHeader}>
+              <View style={styles.heroRow}>
+                <View style={styles.heroLeft}>
+                  <Text style={styles.heroSubtitle}>REAL-TIME GEOSPATIAL</Text>
+                  <Text style={styles.heroTitle}>Nearby Manholes</Text>
+                </View>
+                <View style={styles.heroIconBadge}>
+                  <Ionicons name="radio-outline" size={24} color={Colors.primary} />
+                </View>
               </View>
             </View>
 
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <Ionicons name="map-outline" size={20} color={Colors.primary} />
+                <View style={[styles.statIconWrapper, { backgroundColor: Colors.primaryLight }]}>
+                  <Ionicons name="map-outline" size={18} color={Colors.primary} />
+                </View>
                 <Text style={styles.statValue}>{stats.totalNearby}</Text>
                 <Text style={styles.statLabel}>In Range</Text>
               </View>
+
               <View style={styles.statCard}>
-                <Ionicons
-                  name="navigate-outline"
-                  size={20}
-                  color={Colors.success}
-                />
+                <View style={[styles.statIconWrapper, { backgroundColor: Colors.successLight }]}>
+                  <Ionicons name="navigate-outline" size={18} color={Colors.success} />
+                </View>
                 <Text style={styles.statValue}>{stats.closestText}</Text>
-                <Text style={styles.statLabel}>Closest Dist</Text>
+                <Text style={styles.statLabel}>Closest</Text>
               </View>
+
               <View style={styles.statCard}>
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={20}
-                  color={
-                    stats.damagedCount > 0 ? Colors.danger : Colors.textMuted
-                  }
-                />
-                <Text style={styles.statValue}>{stats.damagedCount}</Text>
+                <View
+                  style={[
+                    styles.statIconWrapper,
+                    {
+                      backgroundColor:
+                        stats.damagedCount > 0 ? Colors.dangerLight : "#F1F5F9",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={18}
+                    color={stats.damagedCount > 0 ? Colors.danger : Colors.textMuted}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.statValue,
+                    stats.damagedCount > 0 && { color: Colors.danger },
+                  ]}
+                >
+                  {stats.damagedCount}
+                </Text>
                 <Text style={styles.statLabel}>Damaged</Text>
               </View>
             </View>
 
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>Scan Radius</Text>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="options-outline" size={16} color={Colors.primary} />
+                <Text style={styles.sectionTitle}>Scan Radius</Text>
+              </View>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -169,6 +189,7 @@ export default function NearbyScreen() {
                       scanRadius === opt && styles.pillActive,
                     ]}
                     onPress={() => handleRadiusChange(opt)}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -183,23 +204,27 @@ export default function NearbyScreen() {
               </ScrollView>
             </View>
 
-            <Text style={styles.listTitle}>
-              {processedList.length}{" "}
-              {processedList.length === 1 ? "Manhole" : "Manholes"} Found
-            </Text>
+            <View style={styles.listHeaderRow}>
+              <Text style={styles.listTitle}>
+                Assets Found ({processedList.length})
+              </Text>
+              <Text style={styles.listSubtitle}>Auto-sorted by proximity</Text>
+            </View>
           </>
         }
         ListEmptyComponent={
           !isFetching ? (
             <View style={styles.emptyState}>
-              <Ionicons
-                name="search-outline"
-                size={36}
-                color={Colors.textMuted}
-              />
+              <View style={styles.emptyIconCircle}>
+                <Ionicons
+                  name="search-outline"
+                  size={32}
+                  color={Colors.textMuted}
+                />
+              </View>
               <Text style={styles.emptyTitle}>No manholes found</Text>
               <Text style={styles.emptyText}>
-                Try increasing the search radius.
+                Try increasing the search radius to discover assets nearby.
               </Text>
             </View>
           ) : null
@@ -212,116 +237,172 @@ export default function NearbyScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Colors.background },
   container: { paddingBottom: 40 },
-  header: { alignItems: "center", marginVertical: 20 },
-  avatarContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  heroHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  heroLeft: { flex: 1 },
+  heroSubtitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.primary,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.text,
+    letterSpacing: -0.5,
+  },
+  heroIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: Colors.primaryLight,
-    borderColor: Colors.primary,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 6,
-  },
-  roleBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   statsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 16,
     paddingHorizontal: 16,
+    gap: 8,
   },
   statCard: {
     flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     alignItems: "center",
-    marginHorizontal: 4,
     borderWidth: 1,
     borderColor: Colors.border,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  statIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "800",
     color: Colors.text,
-    marginVertical: 4,
+    marginBottom: 2,
     textAlign: "center",
   },
-  statLabel: { fontSize: 11, color: Colors.textMuted, textAlign: "center" },
+  statLabel: { fontSize: 11, fontWeight: "600", color: Colors.textMuted, textAlign: "center" },
   sectionCard: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: 20,
-    marginHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text,
     marginBottom: 16,
+    marginHorizontal: 16,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  pillsScroll: { paddingRight: 16, gap: 8 },
-  pill: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.text,
+    letterSpacing: -0.1,
+  },
+  pillsScroll: { gap: 8 },
+  pill: {
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
   },
-  pillActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  pillText: { fontSize: 12, fontWeight: "600", color: Colors.textMuted },
-  pillTextActive: { color: "#fff" },
-  listTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text,
+  pillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  pillText: { fontSize: 12, fontWeight: "700", color: Colors.textMuted },
+  pillTextActive: { color: "#FFF" },
+  listHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
     marginHorizontal: 16,
     marginBottom: 10,
+    marginTop: 4,
+  },
+  listTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: Colors.text,
+    letterSpacing: -0.2,
+  },
+  listSubtitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.textMuted,
   },
   emptyList: { flexGrow: 1 },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
-    paddingVertical: 40,
+    paddingVertical: 48,
   },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
   emptyTitle: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.text,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textMuted,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 18,
   },
   errorBanner: {
     backgroundColor: Colors.dangerLight,
@@ -337,3 +418,4 @@ const styles = StyleSheet.create({
   errorTitle: { color: Colors.danger, fontWeight: "700", marginLeft: 8 },
   errorText: { color: Colors.danger, fontSize: 13, fontWeight: "500" },
 });
+

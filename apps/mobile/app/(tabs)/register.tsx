@@ -48,14 +48,16 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="add-circle" size={40} color={Colors.primary} />
-          </View>
-          <Text style={styles.title}>Register Manhole</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>New Survey</Text>
+        {/* Hero Header */}
+        <View style={styles.heroHeader}>
+          <View style={styles.heroRow}>
+            <View style={styles.heroLeft}>
+              <Text style={styles.heroSubtitle}>NEW INFRASTRUCTURE SURVEY</Text>
+              <Text style={styles.heroTitle}>Register Manhole</Text>
+            </View>
+            <View style={styles.heroIconBadge}>
+              <Ionicons name="add-circle" size={24} color={Colors.primary} />
+            </View>
           </View>
         </View>
 
@@ -68,16 +70,20 @@ export default function RegisterScreen() {
 
         {/* Location Details Card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Location Details</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="navigate-outline" size={18} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Location Details</Text>
+          </View>
+
           <View style={styles.infoRow}>
             <Ionicons
               name="location-outline"
               size={20}
-              color={Colors.textMuted}
+              color={Colors.primary}
               style={styles.rowIcon}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>Current Position</Text>
+              <Text style={styles.infoLabel}>GPS Coordinates</Text>
               {liveLocation ? (
                 <Text style={[styles.infoValue, styles.monospace]}>
                   {liveLocation.lat.toFixed(6)}, {liveLocation.lng.toFixed(6)}
@@ -88,25 +94,29 @@ export default function RegisterScreen() {
                 </Text>
               ) : (
                 <Text style={[styles.infoValue, styles.errorTextInline]}>
-                  Acquiring GPS…
+                  Acquiring GPS lock…
                 </Text>
               )}
             </View>
             {liveLocation && (
               <View style={styles.statusBadgeSuccess}>
+                <View style={styles.livePulseDot} />
                 <Text style={styles.statusBadgeTextSuccess}>LIVE</Text>
               </View>
             )}
           </View>
+
           <Text style={styles.helperText}>
-            This is the exact position that will be saved — the same one
-            shown by the location dot on the map.
+            This exact GPS location will be locked and saved for this asset.
           </Text>
         </View>
 
         {/* Manhole Metadata Card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Manhole Metadata</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="hardware-chip-outline" size={18} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Manhole Metadata</Text>
+          </View>
 
           <View style={styles.infoRow}>
             <Ionicons
@@ -138,7 +148,7 @@ export default function RegisterScreen() {
               style={styles.rowIcon}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>Depth (meters)</Text>
+              <Text style={styles.infoLabel}>Depth (Meters)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 2.5"
@@ -165,7 +175,7 @@ export default function RegisterScreen() {
               style={[styles.rowIcon, { marginTop: 2 }]}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>Utility Type</Text>
+              <Text style={styles.infoLabel}>Utility Classification</Text>
               <View style={styles.chipRow}>
                 {(UTILITY_TYPES as string[]).map((type) => {
                   const isActive = utilityType === type;
@@ -183,6 +193,7 @@ export default function RegisterScreen() {
                       onPress={() =>
                         setUtilityType(isActive ? "" : (type as any))
                       }
+                      activeOpacity={0.7}
                     >
                       <Text
                         style={[
@@ -190,7 +201,7 @@ export default function RegisterScreen() {
                           isActive && styles.chipTextSelected,
                         ]}
                       >
-                        {type}
+                        {type.toUpperCase()}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -202,7 +213,10 @@ export default function RegisterScreen() {
 
         {/* Media & Installation Card */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Media & Installation</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="camera-outline" size={18} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Media & Installation</Text>
+          </View>
 
           <View style={styles.infoRow}>
             <Ionicons
@@ -224,6 +238,7 @@ export default function RegisterScreen() {
                 <TouchableOpacity
                   style={styles.todayButton}
                   onPress={setTodayDate}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.todayButtonText}>Today</Text>
                 </TouchableOpacity>
@@ -240,13 +255,13 @@ export default function RegisterScreen() {
             ]}
           >
             <Ionicons
-              name="camera-outline"
+              name="image-outline"
               size={20}
               color={Colors.textMuted}
               style={[styles.rowIcon, { marginTop: 2 }]}
             />
             <View style={styles.rowContent}>
-              <Text style={styles.infoLabel}>Manhole Photo</Text>
+              <Text style={styles.infoLabel}>Asset Photo Evidence</Text>
 
               {photoUri ? (
                 <View style={styles.photoContainer}>
@@ -261,10 +276,11 @@ export default function RegisterScreen() {
                         styles.photoActionBtnSecondary,
                       ]}
                       onPress={handlePickImage}
+                      activeOpacity={0.7}
                     >
                       <Ionicons
                         name="images-outline"
-                        size={16}
+                        size={15}
                         color={Colors.primary}
                       />
                       <Text style={styles.photoActionTextSecondary}>
@@ -277,10 +293,11 @@ export default function RegisterScreen() {
                         styles.photoActionBtnSecondary,
                       ]}
                       onPress={handleTakePhoto}
+                      activeOpacity={0.7}
                     >
                       <Ionicons
                         name="camera-outline"
-                        size={16}
+                        size={15}
                         color={Colors.primary}
                       />
                       <Text style={styles.photoActionTextSecondary}>
@@ -293,10 +310,11 @@ export default function RegisterScreen() {
                         styles.photoActionBtnDanger,
                       ]}
                       onPress={() => setPhotoUri(null)}
+                      activeOpacity={0.7}
                     >
                       <Ionicons
                         name="trash-outline"
-                        size={16}
+                        size={15}
                         color={Colors.danger}
                       />
                       <Text style={styles.photoActionTextDanger}>Remove</Text>
@@ -305,23 +323,26 @@ export default function RegisterScreen() {
                 </View>
               ) : (
                 <View style={styles.photoPlaceholderContainer}>
-                  <Ionicons
-                    name="image-outline"
-                    size={40}
-                    color={Colors.textMuted}
-                    style={{ marginBottom: 8 }}
-                  />
+                  <View style={styles.photoPlaceholderIconCircle}>
+                    <Ionicons
+                      name="camera"
+                      size={28}
+                      color={Colors.primary}
+                    />
+                  </View>
+                  <Text style={styles.photoPlaceholderTitle}>Upload Photo Evidence</Text>
                   <Text style={styles.photoPlaceholderText}>
-                    Capture a photo of the manhole to help locate it later.
+                    Capture a clear photo of the manhole cover and surrounding terrain.
                   </Text>
                   <View style={styles.photoActions}>
                     <TouchableOpacity
                       style={styles.photoSelectBtn}
                       onPress={handleTakePhoto}
+                      activeOpacity={0.8}
                     >
                       <Ionicons
                         name="camera"
-                        size={16}
+                        size={15}
                         color="#fff"
                         style={{ marginRight: 6 }}
                       />
@@ -333,10 +354,11 @@ export default function RegisterScreen() {
                         styles.photoSelectBtnSecondary,
                       ]}
                       onPress={handlePickImage}
+                      activeOpacity={0.7}
                     >
                       <Ionicons
                         name="images"
-                        size={16}
+                        size={15}
                         color={Colors.primary}
                         style={{ marginRight: 6 }}
                       />
@@ -356,16 +378,17 @@ export default function RegisterScreen() {
           style={[styles.submitButton, submitting && styles.disabled]}
           onPress={handleSubmit}
           disabled={submitting}
+          activeOpacity={0.85}
         >
           {submitStage === "saving" ? (
             <>
               <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.submitText}>Saving…</Text>
+              <Text style={styles.submitText}>Saving Asset…</Text>
             </>
           ) : (
             <>
               <Ionicons
-                name="checkmark-circle-outline"
+                name="checkmark-circle"
                 size={20}
                 color="#fff"
                 style={{ marginRight: 8 }}
@@ -381,37 +404,40 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Colors.background },
-  container: { padding: 16, paddingBottom: 40 },
-  header: { alignItems: "center", marginVertical: 20 },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  container: { paddingBottom: 40 },
+  heroHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  heroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  heroLeft: { flex: 1 },
+  heroSubtitle: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.primary,
+    letterSpacing: 1.2,
+    marginBottom: 2,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.text,
+    letterSpacing: -0.5,
+  },
+  heroIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: Colors.primaryLight,
-    borderColor: Colors.primary,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 6,
-  },
-  badge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   sectionCard: {
     backgroundColor: Colors.surface,
@@ -419,79 +445,86 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: 20,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: Colors.text,
-    marginBottom: 16,
+    letterSpacing: -0.2,
   },
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
-  rowIcon: { marginRight: 14 },
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
+  rowIcon: { marginRight: 12 },
   rowContent: { flex: 1 },
   infoLabel: {
     fontSize: 11,
+    fontWeight: "700",
     color: Colors.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 2,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  infoValue: { fontSize: 14, color: Colors.text },
+  infoValue: { fontSize: 14, fontWeight: "600", color: Colors.text },
   monospace: {
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     fontSize: 13,
-    fontWeight: "600",
-    color: Colors.text,
+    fontWeight: "700",
+    color: Colors.primaryDark,
   },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 4 },
+  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 6 },
   helperText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: "500",
     color: Colors.textMuted,
     marginTop: 8,
     lineHeight: 16,
   },
-  errorTextInline: { color: Colors.danger, fontStyle: "italic", fontSize: 14 },
+  errorTextInline: { color: Colors.danger, fontStyle: "italic", fontSize: 13 },
   statusBadgeSuccess: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.successLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    gap: 4,
+  },
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.success,
   },
   statusBadgeTextSuccess: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "800",
     color: Colors.success,
   },
-  buttonRow: { marginTop: 12, alignItems: "stretch" },
-  actionButton: {
-    height: 44,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonPrimary: { backgroundColor: Colors.primary },
-  actionButtonSecondary: {
-    backgroundColor: Colors.primaryLight,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
-  actionButtonText: { fontWeight: "600", fontSize: 14 },
-  actionButtonTextPrimary: { color: "#fff" },
-  actionButtonTextSecondary: { color: Colors.primary },
   input: {
-    height: 40,
+    height: 42,
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.border,
     paddingHorizontal: 12,
     fontSize: 14,
+    fontWeight: "600",
     color: Colors.text,
-    marginTop: 6,
+    marginTop: 2,
   },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -501,32 +534,32 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textMuted,
-    fontWeight: "600",
-    textTransform: "capitalize",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   chipTextSelected: { color: "#fff" },
   dateInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 2,
     gap: 8,
   },
   todayButton: {
     backgroundColor: Colors.primaryLight,
-    height: 40,
-    borderRadius: 8,
+    height: 42,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: "#BAE6FD",
   },
-  todayButtonText: { color: Colors.primary, fontWeight: "600", fontSize: 13 },
+  todayButtonText: { color: Colors.primary, fontWeight: "700", fontSize: 13 },
   photoContainer: {
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.background,
@@ -551,7 +584,7 @@ const styles = StyleSheet.create({
   photoActionBtnSecondary: {
     backgroundColor: Colors.primaryLight,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: "#BAE6FD",
   },
   photoActionBtnDanger: {
     backgroundColor: Colors.dangerLight,
@@ -560,36 +593,51 @@ const styles = StyleSheet.create({
   },
   photoActionTextSecondary: {
     color: Colors.primary,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 12,
   },
   photoActionTextDanger: {
     color: Colors.danger,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 12,
   },
   photoPlaceholderContainer: {
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
     borderStyle: "dashed",
     backgroundColor: Colors.background,
-    padding: 16,
+    padding: 20,
     alignItems: "center",
+  },
+  photoPlaceholderIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.primaryLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  photoPlaceholderTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 4,
   },
   photoPlaceholderText: {
     fontSize: 12,
     color: Colors.textMuted,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 14,
     lineHeight: 16,
   },
   photoSelectBtn: {
     flex: 1,
     flexDirection: "row",
-    height: 36,
-    borderRadius: 8,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -597,30 +645,31 @@ const styles = StyleSheet.create({
   photoSelectBtnSecondary: {
     backgroundColor: Colors.primaryLight,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: "#BAE6FD",
   },
-  photoSelectBtnText: { color: "#fff", fontWeight: "600", fontSize: 12 },
+  photoSelectBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
   photoSelectBtnTextSecondary: {
     color: Colors.primary,
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 12,
   },
   submitButton: {
     flexDirection: "row",
-    height: 50,
+    height: 52,
     borderRadius: 16,
     backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+    marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 20,
   },
-  submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  submitText: { color: "#fff", fontWeight: "800", fontSize: 16, letterSpacing: -0.2 },
   disabled: { opacity: 0.6 },
   errorCard: {
     flexDirection: "row",
@@ -630,6 +679,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.danger,
     borderRadius: 12,
     padding: 12,
+    marginHorizontal: 16,
     marginBottom: 16,
     gap: 8,
   },

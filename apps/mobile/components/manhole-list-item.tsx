@@ -2,7 +2,7 @@ import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Manhole } from "../api/manholes";
 import { formatDistance } from "../services/geo";
-import { Colors, UtilityColors } from "../constants/theme";
+import { Colors, UtilityColors, UtilityStyles } from "../constants/theme";
 
 interface Props {
   manhole: Manhole;
@@ -11,16 +11,27 @@ interface Props {
 }
 
 export function ManholeListItem({ manhole, onPress, onViewDetails }: Props) {
-  const utilityColor = manhole.utilityType
-    ? (UtilityColors[manhole.utilityType] ?? Colors.primary)
-    : Colors.textMuted;
+  const typeKey = manhole.utilityType?.toLowerCase() ?? "telecom";
+  const utilityStyle = UtilityStyles[typeKey] ?? UtilityStyles.telecom;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: utilityStyle.bg }]}>
+        <Ionicons
+          name={(utilityStyle.icon as any) ?? "location-outline"}
+          size={20}
+          color={utilityStyle.text}
+        />
+      </View>
+
       <View style={styles.body}>
         <View style={styles.topRow}>
           <Text style={styles.code} numberOfLines={1}>
-            {manhole.code ?? "Unnamed manhole"}
+            {manhole.code ?? "Unnamed Manhole"}
           </Text>
           {manhole.distanceMeters !== undefined && (
             <DistanceBadge meters={manhole.distanceMeters} />
@@ -29,27 +40,29 @@ export function ManholeListItem({ manhole, onPress, onViewDetails }: Props) {
 
         <View style={styles.metaRow}>
           <View style={styles.metaLeft}>
-            {manhole.utilityType && (
-              <Text style={[styles.tag, { color: utilityColor }]}>
-                {manhole.utilityType.toUpperCase()}
+            <View style={[styles.utilityTag, { backgroundColor: utilityStyle.bg }]}>
+              <Text style={[styles.utilityText, { color: utilityStyle.text }]}>
+                {(manhole.utilityType ?? "telecom").toUpperCase()}
               </Text>
-            )}
-            <StatusDot status={manhole.status} />
-            {manhole.lastInspectedAt && (
-              <Text style={styles.inspectedText}>
-                Inspected {formatRelativeDate(manhole.lastInspectedAt)}
-              </Text>
-            )}
+            </View>
+
+            <StatusBadge status={manhole.status} />
           </View>
+
+          {manhole.lastInspectedAt && (
+            <Text style={styles.inspectedText}>
+              {formatRelativeDate(manhole.lastInspectedAt)}
+            </Text>
+          )}
 
           {onViewDetails && (
             <TouchableOpacity
               onPress={onViewDetails}
               activeOpacity={0.6}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.eyeIconWrapper}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.eyeBtn}
             >
-              <Ionicons name="eye" size={28} color={Colors.primary} />
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -59,27 +72,34 @@ export function ManholeListItem({ manhole, onPress, onViewDetails }: Props) {
 }
 
 function DistanceBadge({ meters }: { meters: number }) {
-  const isClose = meters < 10;
+  const isVeryClose = meters < 15;
   return (
-    <View style={[styles.badge, isClose && styles.badgeClose]}>
-      <Text style={[styles.badgeText, isClose && styles.badgeTextClose]}>
+    <View style={[styles.distanceChip, isVeryClose && styles.distanceChipClose]}>
+      <Ionicons
+        name="navigate-outline"
+        size={11}
+        color={isVeryClose ? Colors.success : Colors.primary}
+        style={{ marginRight: 3 }}
+      />
+      <Text style={[styles.distanceText, isVeryClose && styles.distanceTextClose]}>
         {formatDistance(meters)}
       </Text>
     </View>
   );
 }
 
-function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "active"
-      ? Colors.success
-      : status === "damaged"
-        ? Colors.danger
-        : Colors.textMuted;
+function StatusBadge({ status }: { status: string }) {
+  const isOk = status === "active";
+  const isBad = status === "damaged";
+  const bg = isOk ? Colors.successLight : isBad ? Colors.dangerLight : "#F1F5F9";
+  const textColor = isOk ? Colors.success : isBad ? Colors.danger : Colors.textMuted;
+
   return (
-    <View style={styles.statusRow}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={[styles.statusText, { color }]}>{status}</Text>
+    <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+      <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+      <Text style={[styles.statusBadgeText, { color: textColor }]}>
+        {status.toUpperCase()}
+      </Text>
     </View>
   );
 }
@@ -87,8 +107,8 @@ function StatusDot({ status }: { status: string }) {
 function formatRelativeDate(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
   if (days < 30) return `${days}d ago`;
   const months = Math.floor(days / 30);
   return `${months}mo ago`;
@@ -97,58 +117,110 @@ function formatRelativeDate(iso: string): string {
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     marginHorizontal: 16,
     marginVertical: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
     elevation: 2,
-    overflow: "hidden",
   },
-  stripe: { width: 5 },
-  body: { flex: 1, padding: 14 },
+  iconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  body: { flex: 1 },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 6,
   },
   code: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
     color: Colors.text,
     flex: 1,
     marginRight: 8,
+    letterSpacing: -0.2,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 8,
   },
   metaLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    flexShrink: 1,
+    gap: 6,
   },
-  eyeIconWrapper: {
-    paddingLeft: 8,
+  utilityTag: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  tag: { fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
-  statusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  dot: { width: 7, height: 7, borderRadius: 4 },
-  statusText: { fontSize: 12 },
-  inspectedText: { fontSize: 12, color: Colors.textMuted },
-  badge: {
+  utilityText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    gap: 4,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  inspectedText: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: Colors.textMuted,
+  },
+  eyeBtn: {
+    paddingLeft: 6,
+  },
+  distanceChip: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primaryLight,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
   },
-  badgeClose: { backgroundColor: Colors.successLight },
-  badgeText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
-  badgeTextClose: { color: Colors.success },
+  distanceChipClose: {
+    backgroundColor: Colors.successLight,
+    borderColor: "#A7F3D0",
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
+  distanceTextClose: {
+    color: Colors.success,
+  },
 });
+
