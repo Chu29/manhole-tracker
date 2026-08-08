@@ -18,7 +18,7 @@ function toPublicTechnician(tech) {
     id: tech.id,
     name: tech.name,
     email: tech.email,
-    orgId: tech.orgId,
+    orgId: tech.orgId || "CAMTEL",
     role: tech.role,
     createdAt: tech.createdAt,
   };
@@ -42,7 +42,7 @@ export async function register(req, res) {
       name,
       email: email.toLowerCase().trim(),
       passwordHash,
-      orgId: orgId || null,
+      orgId: orgId?.trim() || "CAMTEL",
     },
   });
 

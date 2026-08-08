@@ -6,7 +6,7 @@ function toPublicTechnician(tech) {
     id: tech.id,
     name: tech.name,
     email: tech.email,
-    orgId: tech.orgId,
+    orgId: tech.orgId || "CAMTEL",
     role: tech.role,
     createdAt: tech.createdAt,
     inspectionCount: tech._count ? tech._count.inspectionLogs : (tech.inspectionLogs ? tech.inspectionLogs.length : 0),
@@ -93,24 +93,13 @@ export async function updateTechnician(req, res) {
     throw new HttpError(404, "Technician not found");
   }
 
-  let parsedOrgId = undefined;
-  if (orgId !== undefined) {
-    if (orgId === null || orgId === "") {
-      parsedOrgId = null;
-    } else {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orgId);
-      if (!isUuid) {
-        throw new HttpError(400, "Organization ID must be a valid UUID format (or left blank)");
-      }
-      parsedOrgId = orgId;
-    }
-  }
+  const targetOrg = orgId !== undefined ? (orgId?.trim() || "CAMTEL") : (existing.orgId || "CAMTEL");
 
   const updated = await prisma.technician.update({
     where: { id: req.params.id },
     data: {
       role: role !== undefined ? role : existing.role,
-      orgId: parsedOrgId !== undefined ? parsedOrgId : existing.orgId,
+      orgId: targetOrg,
     },
     select: {
       id: true,

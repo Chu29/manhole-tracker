@@ -54,7 +54,7 @@ export default function TechniciansPage() {
       .then((detail) => {
         setTechDetail(detail);
         setEditingRole(detail.role || "technician");
-        setEditingOrg(detail.orgId || "");
+        setEditingOrg(detail.orgId || "CAMTEL");
       })
       .catch((err) => {
         console.error(err);
@@ -71,7 +71,7 @@ export default function TechniciansPage() {
       const cleanOrg = editingOrg.trim();
       const updated = await updateTechnician(selectedTechId, {
         role: editingRole,
-        orgId: cleanOrg.length > 0 ? cleanOrg : null,
+        orgId: cleanOrg.length > 0 ? cleanOrg : "CAMTEL",
       });
       setTechDetail((prev) => (prev ? { ...prev, ...updated } : null));
       fetchTechs();
@@ -288,8 +288,8 @@ export default function TechniciansPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-haze uppercase tracking-wider mb-1.5">Organization ID</label>
-                      <input type="text" placeholder="e.g. Org-01" value={editingOrg} onChange={(e) => setEditingOrg(e.target.value)} className={inputClass} />
+                      <label className="block text-[10px] font-bold text-haze uppercase tracking-wider mb-1.5">Organization Name</label>
+                      <input type="text" placeholder="e.g. CAMTEL" value={editingOrg} onChange={(e) => setEditingOrg(e.target.value)} className={inputClass} />
                     </div>
                   </div>
                   <button
